@@ -1,0 +1,16 @@
+{
+    "name": "RiseOn.Outline2D.Requirements",
+    "rootNamespace": "RiseOn.Outline2D.Requirements",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -4,6 +4,14 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.0.1] - 2026-09-25
+
+### Sửa
+
+- Thiếu Odin Inspector, hoặc thiếu define `ODIN_INSPECTOR` ở nền tảng đang chọn, thì project
+  chỉ báo một lỗi rõ ràng từ assembly `RiseOn.Outline2D.Requirements` thay vì hàng loạt lỗi biên dịch.
+  Các assembly dùng Odin có thêm `defineConstraints: ODIN_INSPECTOR`.
+
 ## [1.0.0] - 2026-09-25
 
 ### Thêm

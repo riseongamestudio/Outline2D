@@ -29,7 +29,8 @@ Package `com.riseon.outline2d`, namespace `RiseOn.Outline2D`.
 | `com.unity.ugui` 2.0.0 | Tự cài theo `package.json` | `OutlineImage` là một Graphic của uGUI |
 | [Odin Inspector](https://odininspector.com) | Cài tay từ Asset Store | Inspector của component |
 
-Odin không có trên UPM nên phải cài vào project trước.
+Odin không có trên UPM nên phải cài vào project trước; thiếu Odin thì project
+báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
 
 ## Cài đặt
 
@@ -46,7 +47,7 @@ Odin không có trên UPM nên phải cài vào project trước.
     }
   ],
   "dependencies": {
-    "com.riseon.outline2d": "1.0.0"
+    "com.riseon.outline2d": "1.0.1"
   }
 }
 ```
@@ -54,7 +55,7 @@ Odin không có trên UPM nên phải cài vào project trước.
 **Git URL**: *Package Manager → + → Add package from git URL*:
 
 ```
-https://github.com/riseongamestudio/Outline2D.git#v1.0.0
+https://github.com/riseongamestudio/Outline2D.git#v1.0.1
 ```
 
 **Thư mục local**: `"com.riseon.outline2d": "file:D:/path/to/Outline2D"`.
