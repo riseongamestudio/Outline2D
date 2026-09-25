@@ -1,7 +1,8 @@
-// Silhouette capture: drawn only through a CommandBuffer with DrawRenderer, never by a camera, so it carries no
-// pipeline tag. Only the texture's alpha counts; the renderer's color and alpha are ignored on purpose, and
-// DrawRenderer hands over the sprite's geometry with flipX / flipY already applied.
-Shader "Hidden/RiseOn/SpriteOutline/Mask"
+// Silhouette capture: drawn only through a CommandBuffer, never by a camera, so it carries no pipeline tag. Sprites
+// come through DrawRenderer with their geometry and flipX / flipY already applied, Images through DrawMesh with the
+// mesh uGUI built for them and their texture in _MainTex. Only the texture's alpha counts; the target's color and
+// alpha are ignored on purpose.
+Shader "Hidden/RiseOn/Outline2D/Mask"
 {
     Properties
     {

@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace RiseOn.SpriteOutline {
+namespace RiseOn.Outline2D {
     /// <summary>
-    /// Where one capture sits in the outliner's local space: its bottom-left corner, the size of a texel and<br/>
+    /// Where one capture sits in the outline's local space: its bottom-left corner, the size of a texel and<br/>
     /// how many texels it spans. The same frame drives the mask projection, the distance field and the quad.
     /// </summary>
     internal readonly struct OutlineFrame {

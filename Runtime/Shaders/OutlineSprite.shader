@@ -1,7 +1,7 @@
-// Draws the outline from the distance field: the ring from the silhouette's edge out to the width. The width is
-// interpolated in world units from the orthographic size of the camera drawing it, so zooming never needs a new
-// capture. Keeps SRP Batcher compatibility.
-Shader "RiseOn/SpriteOutline/Outline"
+// Draws an OutlineSprite's outline from the distance field: the ring from the silhouette's edge out to the width.
+// The width is interpolated in world units from the orthographic size of the camera drawing it, so zooming never
+// needs a new capture. Keeps SRP Batcher compatibility.
+Shader "RiseOn/Outline2D/OutlineSprite"
 {
     Properties
     {

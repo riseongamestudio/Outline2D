@@ -6,7 +6,7 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
-namespace RiseOn.SpriteOutline {
+namespace RiseOn.Outline2D {
     /// <summary>
     /// The CPU half: turns a read-back mask into an exact Euclidean distance field on worker threads and uploads<br/>
     /// it as a half-float texture, in texels from the nearest silhouette texel. Sized once like the mask; each<br/>
@@ -19,7 +19,10 @@ namespace RiseOn.SpriteOutline {
         // Farther than any texel can be along a row, so a side without silhouette needs no special case.
         private const int FAR = 1 << 16;
 
-        private static readonly ProfilerMarker uploadMarker = new("SpriteOutline.Upload");
+        // Written down a column without any silhouette texel: farther than any distance inside the largest frame.
+        private const float BEYOND = 4096;
+
+        private static readonly ProfilerMarker uploadMarker = new("Outline2D.Upload");
 
         private readonly Texture2D texture;
         private NativeArray<byte> mask;
@@ -74,7 +77,6 @@ namespace RiseOn.SpriteOutline {
               , width = frame.Width
               , height = frame.Height
               , fieldWidth = Size
-              , maxDistance = frame.MaxRadius + 2
             }.Schedule(frame.Width, 8, rowPass);
 
             running = true;
@@ -149,7 +151,6 @@ namespace RiseOn.SpriteOutline {
             public int width;
             public int height;
             public int fieldWidth;
-            public float maxDistance;
 
             public void Execute(int x) {
                 var v = new NativeArray<int>(height, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -187,7 +188,7 @@ namespace RiseOn.SpriteOutline {
                     z[k + 1] = float.PositiveInfinity;
                 }
 
-                var beyond = (ushort)math.f32tof16(maxDistance);
+                var beyond = (ushort)math.f32tof16(BEYOND);
 
                 if (k < 0) {
                     for (var q = 0; q < height; ++q) field[q * fieldWidth + x] = beyond;
@@ -196,9 +197,11 @@ namespace RiseOn.SpriteOutline {
                         while (z[j + 1] < q) ++j;
 
                         var p = v[j];
-                        var d = math.sqrt((float)((q - p) * (q - p) + rows[p * width + x]));
+                        var d = math.sqrt((q - p) * (q - p) + rows[p * width + x]);
 
-                        field[q * fieldWidth + x] = (ushort)math.f32tof16(math.min(d, maxDistance));
+                        // Unclamped: the ring's outer ramp spans half a screen pixel, many texels when zoomed out, and must fade
+                        // out before the quad's edge instead of tinting the whole quad.
+                        field[q * fieldWidth + x] = (ushort)math.f32tof16(d);
                     }
                 }
 

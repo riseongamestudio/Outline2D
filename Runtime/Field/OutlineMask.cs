@@ -1,14 +1,13 @@
-using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
-namespace RiseOn.SpriteOutline {
+namespace RiseOn.Outline2D {
     /// <summary>
-    /// The GPU half: draws the sprites' silhouettes into the bottom-left corner of a square single-channel<br/>
-    /// target, one DrawRenderer each, then reads that corner back. The target is allocated once at the largest<br/>
+    /// The GPU half: draws the targets' silhouettes into the bottom-left corner of a square single-channel<br/>
+    /// target, one draw each, then reads that corner back. The target is allocated once at the largest<br/>
     /// size a frame can take, so a capture never allocates GPU memory.
     /// </summary>
     internal sealed class OutlineMask {
@@ -16,7 +15,7 @@ namespace RiseOn.SpriteOutline {
 
         private readonly RenderTexture texture;
         private readonly Material material;
-        private readonly CommandBuffer cmd = new() { name = "SpriteOutline Capture" };
+        private readonly CommandBuffer cmd = new() { name = "Outline2D Capture" };
         private readonly int bytesPerPixel;
 
         // Only for devices without asynchronous readback: a blocking copy that stalls once per capture.
@@ -30,7 +29,7 @@ namespace RiseOn.SpriteOutline {
         public OutlineMask(int size) {
             Size = size;
             texture = CreateTexture(size, out bytesPerPixel);
-            material = new Material(GraphicsSettings.GetRenderPipelineSettings<SpriteOutlineResources>().MaskShader) { hideFlags = HideFlags.HideAndDontSave };
+            material = new Material(GraphicsSettings.GetRenderPipelineSettings<Outline2DResources>().MaskShader) { hideFlags = HideFlags.HideAndDontSave };
 
             // R8 wherever the device can render to it.
             static RenderTexture CreateTexture(int size, out int bytesPerPixel) {
@@ -52,8 +51,8 @@ namespace RiseOn.SpriteOutline {
             }
         }
 
-        /// <summary>Captures the renderers into frame.Width x frame.Height texels and hands the bytes to onData.</summary>
-        public void Capture(IReadOnlyList<SpriteRenderer> renderers, Matrix4x4 worldToLocal, in OutlineFrame frame, float cutoff, DataHandler onData) {
+        /// <summary>Captures the source into frame.Width x frame.Height texels and hands the bytes to onData.</summary>
+        public void Capture(IMaskSource source, Matrix4x4 worldToLocal, in OutlineFrame frame, float cutoff, DataHandler onData) {
             material.SetFloat(cutoffId, cutoff);
 
             cmd.Clear();
@@ -62,11 +61,7 @@ namespace RiseOn.SpriteOutline {
             cmd.SetViewport(new Rect(0, 0, frame.Width, frame.Height));
             cmd.SetViewProjectionMatrices(worldToLocal, frame.Projection);
 
-            foreach (var renderer in renderers) {
-                if (renderer == null || renderer.sprite == null) continue;
-
-                cmd.DrawRenderer(renderer, material, 0, 0);
-            }
+            source.Draw(cmd, material);
 
             if (!SystemInfo.supportsAsyncGPUReadback) {
                 Graphics.ExecuteCommandBuffer(cmd);
@@ -96,18 +91,27 @@ namespace RiseOn.SpriteOutline {
         }
 
         /// <summary>
-        /// Draws once with the mask shader and with the outline material and reads a texel back, so the GPU programs<br/>
+        /// Draws once with the mask shader and with each outline material and reads a texel back, so the GPU programs<br/>
         /// and the readback path exist before the first capture needs them.
         /// </summary>
-        public void Warm(Material outline, Mesh quad) {
+        public void Warm(params Material[] outlines) {
+            // A degenerate triangle: enough to build each program, with nothing rasterised.
+            var mesh = new Mesh { hideFlags = HideFlags.HideAndDontSave };
+
+            mesh.SetVertices(new Vector3[3]);
+            mesh.SetUVs(0, new Vector2[3]);
+            mesh.SetTriangles(new[] { 0, 1, 2 }, 0);
+
             cmd.Clear();
             cmd.SetRenderTarget(texture);
-            cmd.DrawMesh(quad, Matrix4x4.identity, material, 0, 0);
-            cmd.DrawMesh(quad, Matrix4x4.identity, outline, 0, 0);
+            cmd.DrawMesh(mesh, Matrix4x4.identity, material, 0, 0);
+
+            foreach (var outline in outlines) cmd.DrawMesh(mesh, Matrix4x4.identity, outline, 0, 0);
 
             if (SystemInfo.supportsAsyncGPUReadback) cmd.RequestAsyncReadback(texture, 0, 0, 1, 0, 1, 0, 1, _ => { });
 
             Graphics.ExecuteCommandBuffer(cmd);
+            SafeDestroy(mesh);
         }
 
         public void Release() {
