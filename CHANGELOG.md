@@ -4,6 +4,53 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.0.2] - 2026-09-26
+
+### Đổi
+
+- Mỗi viền chỉ còn đúng một component. Thứ vẽ viền được sinh lúc `Awake` trên một GameObject con
+  ẩn, không lưu vào scene hay prefab: `OutlineSprite` sinh một `SpriteRenderer` thay cho
+  `MeshFilter` + `MeshRenderer`, `OutlineImage` sinh một Graphic. Code bên ngoài không còn chạm
+  tới renderer.
+- `OutlineImage` không còn kế thừa `MaskableGraphic` mà là một MonoBehaviour; *Color* và
+  *Maskable* của Graphic thành field `color`, `maskable` của nó.
+- `OutlineSprite` có nhóm setting *Rendering*: `sortingLayerID`, `sortingOrder` và
+  `maskInteraction` (SpriteMask cắt viền như cắt sprite).
+- `IOutline<T>` tách thành `IOutline` (màu, chung cho cả hai), `IOutlineSprite` (sorting layer,
+  order, mask interaction, `SetTargets(IEnumerable<SpriteRenderer>)`) và `IOutlineImage`
+  (maskable, `SetTargets(IEnumerable<Image>)`).
+- Lớp cha chung `Outline` giữ setting chung, material, vòng chụp và con ẩn.
+- Shader viền vẽ vành trắng, renderer nhân màu vào như với sprite và Graphic thường; shader viền
+  sprite bỏ thuộc tính `_Color`.
+- Field `outlineShader` đổi tên thành `shader`, đứng đầu Inspector ngoài mọi nhóm; ô script ẩn
+  (`HideMonoScript`).
+- Thư mục: `IOutline` và `Outline` ở gốc `Runtime/`, hai component trong `Runtime/Concretes/`,
+  mỗi thư mục chứa interface, shader viền và nguồn vẽ riêng của component đó.
+
+Project đang dùng 1.0.x phải tự chuyển dữ liệu:
+
+- GameObject có `OutlineSprite`: bỏ `MeshFilter` và `MeshRenderer`, chép *Sorting Layer* và
+  *Order in Layer* của `MeshRenderer` sang `sortingLayerID` và `sortingOrder`, gán lại `shader`.
+- GameObject có `OutlineImage`: bỏ `CanvasRenderer`, chép *Color* và *Maskable* sang `color` và
+  `maskable`, gán lại `shader`.
+- Code: `IOutline<SpriteRenderer>` thành `IOutlineSprite`, `IOutline<Image>` thành `IOutlineImage`.
+
+### Thêm
+
+- Adapter tween màu viền qua `IOutline`: LitMotion (`BindToColor`, `BindToColorR/G/B/A`) và
+  DOTween (`DOColor`, `DOFade`, `DOGradientColor`, `DOBlendableColor`). Mỗi adapter là một assembly
+  tự bật khi project có thư viện.
+
+### Bỏ
+
+- Assembly `RiseOn.Outline2D.Editor`: processor Odin giấu các field của Graphic trên
+  `OutlineImage`, nay không còn field nào như thế.
+
+### Sửa
+
+- `OutlineImage`: đổi *Maskable* lúc chạy có tác dụng ngay với RectMask2D, không phải chờ lần
+  bật lại hay đổi cha như setter `maskable` của uGUI.
+
 ## [1.0.1] - 2026-09-25
 
 ### Sửa

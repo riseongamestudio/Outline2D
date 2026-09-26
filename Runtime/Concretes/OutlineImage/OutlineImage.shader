@@ -124,8 +124,10 @@ Shader "RiseOn/Outline2D/OutlineImage"
                 const half invAlphaPrecision = half(1.0 / alphaPrecision);
                 IN.color.a = round(IN.color.a * alphaPrecision) * invAlphaPrecision;
 
-                half4 color = IN.color;
-                color.a *= outer * inner;
+                // A white ring, like an Image's texture, tinted by Graphic.color through the vertex colour as every
+                // Graphic is.
+                half4 ring = half4(1, 1, 1, outer * inner);
+                half4 color = ring * IN.color;
 
                 #ifdef UNITY_UI_CLIP_RECT
                 half2 m = saturate((_ClipRect.zw - _ClipRect.xy - abs(IN.mask.xy)) * IN.mask.zw);

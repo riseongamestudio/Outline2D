@@ -37,7 +37,7 @@ namespace RiseOn.Outline2D {
         public OutlineFrame Frame { get; private set; }
 
         /// <summary>The distance field; a new texture only after <see cref="Allocate"/> returns true.</summary>
-        public Texture Texture => field?.Texture;
+        public Texture2D Texture => field?.Texture;
 
         /// <summary>A capture should run now: new targets, or new settings once the last capture has landed.</summary>
         public bool IsDue => stage is Stage.Capture || (stage is Stage.Shown && outdated);

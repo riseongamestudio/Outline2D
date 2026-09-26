@@ -31,7 +31,7 @@ namespace RiseOn.Outline2D {
         private JobHandle handle;
         private bool running;
 
-        public Texture Texture => texture;
+        public Texture2D Texture => texture;
         public int Size { get; }
 
         public OutlineField(int size) {

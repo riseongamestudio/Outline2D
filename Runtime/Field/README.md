@@ -5,9 +5,9 @@
 Phần nội bộ biến một nhóm target thành distance field, dùng chung cho `OutlineSprite` và
 `OutlineImage`. `OutlineCapture` điều phối các lần chụp của một component: `OutlineFrame` chọn
 khung chụp, `OutlineMask` chụp silhouette trên GPU và đọc về, `OutlineField` tính khoảng cách
-trên worker thread và upload thành texture. Nguồn vẽ (`IMaskSource`) cho biết nhóm trông ra sao:
-`SpriteSource` cho sprite, `ImageSource` cho Image, phần giữ danh sách và tính bounds chung ở
-`MaskSource<T>`. `Outline2DResources` giữ shader mask cho `OutlineMask` (xem
+trên worker thread và upload thành texture. Nguồn vẽ (`IMaskSource`) cho biết nhóm trông ra sao;
+phần giữ danh sách và tính bounds chung ở `MaskSource<T>`, còn `SpriteSource` và `ImageSource`
+nằm cạnh component dùng chúng. `Outline2DResources` giữ shader mask cho `OutlineMask` (xem
 [Shader](../Shaders/README.md)). Tất cả là `internal`.
 
 Những điều dưới đây không suy ra được từ việc đọc từng file.
@@ -37,13 +37,11 @@ phát lại, ngay trước lần chụp kế tiếp.
 
 ## Nguồn vẽ
 
-- **Sprite**: mỗi renderer một `DrawRenderer`. Unity đưa vào texture của sprite và hình học đã
-  lật sẵn theo `flipX` / `flipY`.
-- **Image**: vẽ bằng mesh uGUI đã giao cho CanvasRenderer của Image
-  (`CanvasRenderer.GetMesh()`), với texture chính của Image. Vẽ thẳng mesh đó thì mask trống
-  (đo trong Editor trên D3D12: 0 texel, còn bản chép của cùng mesh ra 12652 texel), nên mỗi
-  Image được chép sang một mesh riêng bằng `Mesh.CombineMeshes` rồi mới vẽ. Các mesh chép được
-  giữ lại cho lần chụp sau. Image tắt hoặc chưa có mesh thì bị bỏ qua.
+Mỗi loại target có nguồn vẽ riêng, ghi ở component dùng nó:
+[OutlineSprite](../Concretes/OutlineSprite/README.md#nguồn-vẽ) (mỗi renderer một
+`DrawRenderer`), [OutlineImage](../Concretes/OutlineImage/README.md#nguồn-vẽ) (bản chép mesh
+uGUI của từng Image). Phần chung ở `MaskSource<T>`: giữ danh sách target đọc từ `SetTargets`
+và tính bounds của cả nhóm trong không gian local của component viền.
 
 ## Chụp và đọc về
 

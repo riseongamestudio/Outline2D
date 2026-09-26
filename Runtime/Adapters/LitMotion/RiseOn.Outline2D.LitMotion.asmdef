@@ -1,0 +1,26 @@
+{
+    "name": "RiseOn.Outline2D.LitMotion",
+    "rootNamespace": "RiseOn.Outline2D.LitMotion",
+    "references": [
+        "RiseOn.Outline2D",
+        "LitMotion"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ODIN_INSPECTOR",
+        "HAS_LITMOTION"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.annulusgames.lit-motion",
+            "expression": "2.0.0",
+            "define": "HAS_LITMOTION"
+        }
+    ],
+    "noEngineReferences": false
+}

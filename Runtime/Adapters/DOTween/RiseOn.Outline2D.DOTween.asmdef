@@ -1,19 +1,18 @@
 {
-    "name": "RiseOn.Outline2D.Editor",
-    "rootNamespace": "RiseOn.Outline2D.Editor",
+    "name": "RiseOn.Outline2D.DOTween",
+    "rootNamespace": "RiseOn.Outline2D.DOTween",
     "references": [
         "RiseOn.Outline2D"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [
-        "ODIN_INSPECTOR"
+        "ODIN_INSPECTOR",
+        "DOTWEEN"
     ],
     "versionDefines": [],
     "noEngineReferences": false
