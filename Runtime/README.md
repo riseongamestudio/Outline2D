@@ -62,7 +62,8 @@ tục thì lần đang chạy vẫn chạy xong và hiện ra, lần sau lấy g
 tay kéo mà không chụp dồn mỗi frame.
 
 Inspector có *Shader* (kèm nút *Default*), *Visual* rồi *Optimizations*; setting sorting và mask
-nằm trong nhóm gập *Visual/Advanced*. Inspector vẽ field của lớp cha trước, nên *Optimizations*
+nằm trong mục gập *Advanced* của *Visual*, chỉ có mũi tên và nhãn, không khung, như *Additional
+Settings* của SpriteRenderer (xem [Editor](../Editor/README.md)). Inspector vẽ field của lớp cha trước, nên *Optimizations*
 được đặt thứ tự để luôn đứng cuối, kể cả khi lớp con thêm nhóm.
 
 ## Vành viền

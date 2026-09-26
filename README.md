@@ -48,7 +48,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
     }
   ],
   "dependencies": {
-    "com.riseon.outline2d": "1.0.3"
+    "com.riseon.outline2d": "1.0.4"
   }
 }
 ```
@@ -56,7 +56,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
 **Git URL**: *Package Manager → + → Add package from git URL*:
 
 ```
-https://github.com/riseongamestudio/Outline2D.git#v1.0.3
+https://github.com/riseongamestudio/Outline2D.git#v1.0.4
 ```
 
 **Thư mục local**: `"com.riseon.outline2d": "file:D:/path/to/Outline2D"`.
@@ -131,7 +131,7 @@ nó, nhưng các điểm móc của nó là `private protected`, nên ngoài pac
 | Field | Vòng chụp, khung chụp và ngân sách texel, readback, distance transform | [Runtime/Field](Runtime/Field/README.md) |
 | Shader | Shader chụp silhouette, cách nó vào bản build | [Runtime/Shaders](Runtime/Shaders/README.md) |
 | Adapter | Tween màu viền bằng LitMotion, DOTween | [Runtime/Adapters](Runtime/Adapters/README.md) |
-| Editor | Báo thiếu Odin Inspector | [Editor](Editor/README.md) |
+| Editor | Báo thiếu Odin Inspector, vẽ mục gập không khung của Inspector | [Editor](Editor/README.md) |
 
 ## Lịch sử thay đổi
 

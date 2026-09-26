@@ -4,6 +4,13 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.0.4] - 2026-09-26
+
+### Đổi
+
+- Mục *Advanced* trong *Visual* gập mở chỉ bằng mũi tên và nhãn, không khung, như mục con trong
+  Inspector của Unity; drawer nằm trong assembly Editor `RiseOn.Outline2D.Editor`.
+
 ## [1.0.3] - 2026-09-26
 
 ### Đổi

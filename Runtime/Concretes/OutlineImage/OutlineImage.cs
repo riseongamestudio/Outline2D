@@ -23,7 +23,7 @@ namespace RiseOn.Outline2D {
         protected float width = 8;
 
         // Masks and RectMask2D above this object clip the outline like the Images they clip.
-        [SerializeField, FoldoutGroup("Visual/Advanced")]
+        [SerializeField, PlainFoldoutGroup("Visual/Advanced")]
         protected bool maskable = true;
 
         private readonly ImageSource source = new();
