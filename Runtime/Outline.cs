@@ -12,7 +12,7 @@ namespace RiseOn.Outline2D {
     public abstract class Outline : MonoBehaviour, IOutline {
         private const string CHILD = "Outline";
 
-        [SerializeField, Required]
+        [SerializeField, Required, InlineButton(nameof(UseDefaultShader), "Default")]
         private Shader shader;
 
         [SerializeField, FoldoutGroup("Visual")]
@@ -44,7 +44,7 @@ namespace RiseOn.Outline2D {
             }
         }
 
-        // Found by name when the component is set up in the Editor.
+        // The package's own outline shader, found by name for Reset and the Default button.
         private protected abstract string ShaderName { get; }
 
         // The width setting a capture pads its frame by, in the subclass's own units.
@@ -126,13 +126,11 @@ namespace RiseOn.Outline2D {
         }
 
         protected virtual void Reset() {
-            SetupEditor();
+            UseDefaultShader();
         }
 
-        // Last, below the groups a subclass declares, as the inspector had it before this base existed.
-        [Button, PropertyOrder(2)]
-        protected virtual void SetupEditor() {
-            if (shader == null) shader = Shader.Find(ShaderName);
+        private void UseDefaultShader() {
+            shader = Shader.Find(ShaderName);
         }
     }
 }

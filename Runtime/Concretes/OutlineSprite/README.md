@@ -74,7 +74,7 @@ Chỉnh trong Play mode: xem [Lớp nền](../../README.md#chỉnh-setting-trong
 | `alphaCutoff` | Texel của sprite có alpha lớn hơn mức này thì thuộc silhouette |
 | `orthoRange`, `widthRange` | Độ dày theo world ở hai mức ortho, xem [Độ dày theo zoom](#độ-dày-theo-zoom). `max(widthRange)` còn là vùng đệm của lần chụp |
 
-**Rendering**
+**Visual/Advanced**
 
 | Field | Ý nghĩa |
 |---|---|

@@ -48,7 +48,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
     }
   ],
   "dependencies": {
-    "com.riseon.outline2d": "1.0.2"
+    "com.riseon.outline2d": "1.0.3"
   }
 }
 ```
@@ -56,7 +56,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
 **Git URL**: *Package Manager → + → Add package from git URL*:
 
 ```
-https://github.com/riseongamestudio/Outline2D.git#v1.0.2
+https://github.com/riseongamestudio/Outline2D.git#v1.0.3
 ```
 
 **Thư mục local**: `"com.riseon.outline2d": "file:D:/path/to/Outline2D"`.
@@ -108,8 +108,8 @@ outline.Color = Color.cyan;  // đổi màu ngay, không chụp lại
 Viền cũ tắt ngay lúc gọi, viền mới hiện sau vài frame. Nhóm đổi hình dạng giữa chừng (bật,
 tắt, đổi sprite) thì gọi lại `SetTargets` với tập mới.
 
-Cả hai component có nút *SetupEditor* và tự chạy nó lúc `Reset`, nên kéo component vào là ô
-shader viền tự điền. Shader chụp silhouette là `Hidden` và không có ô để gán: Editor tự thêm nó
+Thêm component trong Editor thì ô shader viền tự điền (`Reset`); nút *Default* cạnh ô đặt lại
+shader viền của package. Shader chụp silhouette là `Hidden` và không có ô để gán: Editor tự thêm nó
 vào URP Global Settings của project như resource nội bộ của URP, nên file settings đó có thêm
 một mục cần commit (xem [Shader](Runtime/Shaders/README.md)).
 
@@ -119,7 +119,7 @@ Không lớp public nào `sealed`. Lớp cha `Outline` phải public vì hai com
 nó, nhưng các điểm móc của nó là `private protected`, nên ngoài package không kế thừa thẳng
 được. Muốn mở rộng thì kế thừa `OutlineSprite` hoặc `OutlineImage`: `SetTargets`,
 `LateUpdate`, `OnEnable`, `OnDisable` và các lifecycle của lớp cha (`Awake`, `OnDestroy`,
-`OnValidate`, `Reset`, `SetupEditor`) là `virtual`, các field setting là `protected`.
+`OnValidate`, `Reset`) là `virtual`, các field setting là `protected`.
 
 ## Thành phần
 

@@ -1,9 +1,9 @@
 {
   "name": "com.riseon.outline2d",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "displayName": "Outline 2D",
   "description": "Outline the merged silhouette of a group of sprites or UI Images, expanded exactly like Select > Modify > Expand, with a fixed texel budget and the distance transform on worker threads",
-  "documentationUrl": "https://github.com/riseongamestudio/Outline2D/blob/v1.0.2/README.md",
+  "documentationUrl": "https://github.com/riseongamestudio/Outline2D/blob/v1.0.3/README.md",
   "author": {
     "name": "RiseOn"
   },

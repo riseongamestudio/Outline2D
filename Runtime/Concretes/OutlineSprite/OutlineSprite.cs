@@ -28,14 +28,14 @@ namespace RiseOn.Outline2D {
         [SerializeField, FoldoutGroup("Visual")]
         protected Vector2 widthRange = new(.05f, .2f);
 
-        [SerializeField, FoldoutGroup("Rendering"), ValueDropdown(nameof(SortingLayers))]
+        [SerializeField, FoldoutGroup("Visual/Advanced"), ValueDropdown(nameof(SortingLayers))]
         protected int sortingLayerID;
 
         // Renderers keep the order in 16 bits and wrap anything outside; Unity's own inspector clamps, so this one does too.
-        [SerializeField, FoldoutGroup("Rendering"), MinValue(short.MinValue), MaxValue(short.MaxValue)]
+        [SerializeField, FoldoutGroup("Visual/Advanced"), MinValue(short.MinValue), MaxValue(short.MaxValue)]
         protected int sortingOrder;
 
-        [SerializeField, FoldoutGroup("Rendering")]
+        [SerializeField, FoldoutGroup("Visual/Advanced")]
         protected SpriteMaskInteraction maskInteraction;
 
         private readonly SpriteSource source = new();

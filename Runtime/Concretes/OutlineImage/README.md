@@ -69,7 +69,7 @@ cũng đổi ngay, trong phạm vi vùng đệm của lần chụp trước.
 | `alphaCutoff` | Texel của Image có alpha lớn hơn mức này thì thuộc silhouette |
 | `width` | Độ dày theo đơn vị root canvas, xem [Trong Canvas](#trong-canvas); cũng là vùng đệm của lần chụp |
 
-**Rendering**
+**Visual/Advanced**
 
 | Field | Ý nghĩa |
 |---|---|

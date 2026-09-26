@@ -4,6 +4,16 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.0.3] - 2026-09-26
+
+### Đổi
+
+- Setting sorting và mask (`sortingLayerID`, `sortingOrder`, `maskInteraction` của `OutlineSprite`,
+  `maskable` của `OutlineImage`) chuyển từ nhóm *Rendering* vào nhóm gập *Visual/Advanced* trên
+  Inspector. Dữ liệu đã lưu không đổi.
+- Bỏ nút *SetupEditor* cùng method `SetupEditor`: ô shader có nút *Default* đặt lại shader viền của
+  package, và thêm component vẫn tự điền ô này.
+
 ## [1.0.2] - 2026-09-26
 
 ### Đổi

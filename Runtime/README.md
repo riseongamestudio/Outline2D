@@ -48,8 +48,9 @@ sẵn tới lần bật đầu tiên. Không cần tắt để giấu viền: vi
 
 ## Shader viền
 
-Shader viền là ô tham chiếu `shader` trên component, được *SetupEditor* điền sẵn khi thêm
-component trong Editor; chính tham chiếu đó đưa shader vào bản build. Thêm component bằng
+Shader viền là ô tham chiếu `shader` trên component, tự điền khi thêm component trong Editor
+(`Reset`); nút *Default* cạnh ô đặt lại shader viền của package. Chính tham chiếu đó đưa shader
+vào bản build. Thêm component bằng
 `AddComponent` lúc chạy thì ô này trống và `Awake` báo lỗi vì không có shader để tạo material,
 nên hãy dùng prefab có sẵn component.
 
@@ -60,8 +61,9 @@ nhất (vùng đệm của lần chụp) thì phải chụp lại. Mỗi lúc ch
 tục thì lần đang chạy vẫn chạy xong và hiện ra, lần sau lấy giá trị mới nhất, nên viền đổi theo
 tay kéo mà không chụp dồn mỗi frame.
 
-Inspector vẽ field của lớp cha trước, nên nhóm *Optimizations* và nút *SetupEditor* được đặt
-thứ tự để vẫn đứng cuối: *Shader*, *Visual*, *Rendering*, *Optimizations*, *SetupEditor*.
+Inspector có *Shader* (kèm nút *Default*), *Visual* rồi *Optimizations*; setting sorting và mask
+nằm trong nhóm gập *Visual/Advanced*. Inspector vẽ field của lớp cha trước, nên *Optimizations*
+được đặt thứ tự để luôn đứng cuối, kể cả khi lớp con thêm nhóm.
 
 ## Vành viền
 
