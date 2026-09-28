@@ -4,6 +4,16 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.0.5] - 2026-09-28
+
+### Đổi
+
+- Symbol bật adapter LitMotion đổi từ `HAS_LITMOTION` thành `OUTLINE2D_SUPPORT_LITMOTION`, mang
+  tiền tố tên pack để không trùng với symbol project tự đặt. Cài LitMotion qua UPM thì không phải
+  sửa gì. Cài LitMotion bằng NuGet hoặc `.unitypackage` và đã tự thêm `HAS_LITMOTION` vào
+  *Scripting Define Symbols* thì đổi sang tên mới, nếu không adapter `RiseOn.Outline2D.LitMotion`
+  sẽ bị bỏ qua. `DOTWEEN` giữ nguyên vì là symbol của DOTween.
+
 ## [1.0.4] - 2026-09-26
 
 ### Đổi

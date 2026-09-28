@@ -48,7 +48,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
     }
   ],
   "dependencies": {
-    "com.riseon.outline2d": "1.0.4"
+    "com.riseon.outline2d": "1.0.5"
   }
 }
 ```
@@ -56,7 +56,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
 **Git URL**: *Package Manager → + → Add package from git URL*:
 
 ```
-https://github.com/riseongamestudio/Outline2D.git#v1.0.4
+https://github.com/riseongamestudio/Outline2D.git#v1.0.5
 ```
 
 **Thư mục local**: `"com.riseon.outline2d": "file:D:/path/to/Outline2D"`.

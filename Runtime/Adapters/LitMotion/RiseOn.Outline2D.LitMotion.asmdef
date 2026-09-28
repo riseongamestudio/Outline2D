@@ -13,13 +13,13 @@
     "autoReferenced": true,
     "defineConstraints": [
         "ODIN_INSPECTOR",
-        "HAS_LITMOTION"
+        "OUTLINE2D_SUPPORT_LITMOTION"
     ],
     "versionDefines": [
         {
             "name": "com.annulusgames.lit-motion",
             "expression": "2.0.0",
-            "define": "HAS_LITMOTION"
+            "define": "OUTLINE2D_SUPPORT_LITMOTION"
         }
     ],
     "noEngineReferences": false

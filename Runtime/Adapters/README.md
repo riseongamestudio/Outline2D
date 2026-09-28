@@ -14,11 +14,11 @@ adapter không được biên dịch và không báo lỗi.
 
 | Adapter | Bật khi | Symbol | Hàm |
 |---|---|---|---|
-| `RiseOn.Outline2D.LitMotion` | Có package `com.annulusgames.lit-motion` 2.0 trở lên; symbol sinh bằng `versionDefines` | `HAS_LITMOTION` | `builder.BindToColor(outline)`, `BindToColorR`, `BindToColorG`, `BindToColorB`, `BindToColorA` |
+| `RiseOn.Outline2D.LitMotion` | Có package `com.annulusgames.lit-motion` 2.0 trở lên; symbol sinh bằng `versionDefines` | `OUTLINE2D_SUPPORT_LITMOTION` | `builder.BindToColor(outline)`, `BindToColorR`, `BindToColorG`, `BindToColorB`, `BindToColorA` |
 | `RiseOn.Outline2D.DOTween` | DOTween đã chạy *Setup*, bước này tự thêm symbol vào *Scripting Define Symbols* | `DOTWEEN` | `outline.DOColor`, `DOFade`, `DOGradientColor`, `DOBlendableColor` |
 
-LitMotion không cài qua UPM (NuGet, `.unitypackage`) thì thêm tay `HAS_LITMOTION` vào *Player
-Settings → Scripting Define Symbols*. DOTween là DLL trong Assets; adapter tham chiếu nó nhờ
+LitMotion không cài qua UPM (NuGet, `.unitypackage`) thì thêm tay `OUTLINE2D_SUPPORT_LITMOTION`
+vào *Player Settings → Scripting Define Symbols*. DOTween là DLL trong Assets; adapter tham chiếu nó nhờ
 *Auto Reference* mặc định của plugin, nên đừng tắt ô đó trên `DOTween.dll`.
 
 Tween DOTween lấy outline làm target, nên `DOKill` trên component viền dừng được nó.
