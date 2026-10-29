@@ -2,6 +2,7 @@
     "name": "RiseOn.Outline2D",
     "rootNamespace": "RiseOn.Outline2D",
     "references": [
+        "RiseOn.Utils",
         "Unity.Burst",
         "Unity.Mathematics",
         "Unity.RenderPipelines.Universal.Runtime",

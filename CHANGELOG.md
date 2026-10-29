@@ -4,6 +4,39 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.1.0] - 2026-10-29
+
+### Thêm
+
+- Bóng đổ mềm của cả silhouette lẫn viền (silhouette nở thêm độ dày viền), cho cả `OutlineSprite` và
+  `OutlineImage`, trong mục gập *Visual/Shadow*: ô đánh dấu trên tiêu đề để bật (mặc định tắt; tắt
+  thì mục không mở được), màu (mặc định đen, alpha 0.5), hướng (`DirectionExt` của RiseOn Utils),
+  khoảng cách và độ mềm. Với `OutlineSprite`, khoảng cách và độ mềm là range theo world, cùng
+  `orthoRange` với độ dày; với `OutlineImage` là một giá trị theo đơn vị root canvas. Có cả property
+  và mặt trong `IOutlineSprite` / `IOutlineImage`.
+- Silhouette nở theo độ dày viền rồi blur Gaussian, nướng lúc chụp ở nửa độ phân giải, trên
+  worker thread sau distance transform, vào kênh G, B, A của field (`OutlineSprite` ba mức theo
+  zoom, `OutlineImage` một mức). Khi bóng bật, field thành `R16G16B16A16_SFloat` và bộ nhớ tăng
+  (ở `resolution` 256: khoảng 2.3 MB GPU và 5.8 MB CPU, so với 768 KB và 2.1 MB); bật hay tắt bóng
+  cấp phát lại field một lần. Ba mức của `OutlineSprite` được pha theo vị trí mép (logit của độ
+  phủ), nên mép bóng không rộng ra hẹp lại khi zoom giữa hai mức.
+- Bóng tắt thì chi phí như viền không bóng: field một kênh, không blur, và shader dùng biến thể
+  không có bóng (keyword `_SHADOW`, `multi_compile_local`).
+- Bóng có độ mềm không quá một texel field ở mức zoom đang vẽ được vẽ từ khoảng cách trong R, như
+  mép ngoài của vành, nên sắc ở mọi mức zoom; từ ba texel trở lên là blur đã nướng, ở giữa thì pha.
+- Bóng của `OutlineImage` tự thêm `TexCoord1` và `TexCoord2` vào *Additional Shader Channels*
+  của root canvas.
+- Phụ thuộc `com.riseon.utils` 1.0.12 (cho `DirectionExt`).
+
+### Đổi
+
+- `OutlineImage` ẩn viền khi field được cấp phát lại (đổi `resolution`, bật hay tắt bóng) cho tới
+  khi lần chụp mới về, thay vì hiện texture chưa có gì trên khung cũ; texture field mới được
+  upload rỗng ngay lúc cấp phát.
+- Inspector: *Alpha Cutoff* đứng đầu *Visual*; `color` và độ dày (`widthRange` / `width`) vào mục
+  gập *Visual/Outline*; `orthoRange` của `OutlineSprite` đứng ngay sau *Alpha Cutoff* vì độ dày và
+  bóng dùng chung. Dữ liệu đã lưu không đổi.
+
 ## [1.0.5] - 2026-09-28
 
 ### Đổi

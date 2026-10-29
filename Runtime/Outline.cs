@@ -1,6 +1,7 @@
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace RiseOn.Outline2D {
     /// <summary>
@@ -12,20 +13,26 @@ namespace RiseOn.Outline2D {
     public abstract class Outline : MonoBehaviour, IOutline {
         private const string CHILD = "Outline";
 
-        [SerializeField, Required, InlineButton(nameof(UseDefaultShader), "Default")]
+        // Ahead of Visual, whose order is its first members' -1.
+        [SerializeField, Required, InlineButton(nameof(UseDefaultShader), "Default"), PropertyOrder(-2)]
         private Shader shader;
 
-        [SerializeField, FoldoutGroup("Visual")]
+        [SerializeField, PlainFoldoutGroup("Visual/Outline")]
         protected Color color = Color.darkOrange;
 
-        // Target texels with alpha above this belong to the silhouette; the targets' own colour is ignored.
-        [SerializeField, FoldoutGroup("Visual"), PropertyRange(0, 1)]
+        // Target texels with alpha above this belong to the silhouette; the targets' own colour is ignored. The outline
+        // and the shadow both follow the silhouette, so it heads the Visual group, above both.
+        [SerializeField, FoldoutGroup("Visual"), PropertyOrder(-1), PropertyRange(0, 1)]
         protected float alphaCutoff = .5f;
 
         // A capture holds about resolution² texels, spread over the group's aspect whatever its size: the one knob for cost.
         // Drawn after the groups a subclass declares.
         [SerializeField, FoldoutGroup("Optimizations", order: 1), PropertyRange(64, 1024)]
         protected int resolution = 256;
+
+        // The outline shaders compile the shadow in only under this keyword, so an outline without one draws at the cost
+        // of the ring alone.
+        private const string SHADOW_KEYWORD = "_SHADOW";
 
         private protected readonly OutlineCapture capture = new();
 
@@ -34,7 +41,7 @@ namespace RiseOn.Outline2D {
         private GameObject child;
 
         // The inputs of the latest capture.
-        private (float cutoff, int resolution, float width) lastInputs;
+        private (float cutoff, int resolution, float width, Vector3 shadowSoftness, Vector3 shadowGrowth, int shadowLevels) lastInputs;
 
         public Color Color {
             get => color;
@@ -50,16 +57,23 @@ namespace RiseOn.Outline2D {
         // The width setting a capture pads its frame by, in the subclass's own units.
         private protected abstract float CaptureWidth { get; }
 
-        private (float cutoff, int resolution, float width) CaptureInputs => (alphaCutoff, resolution, CaptureWidth);
+        // How many blur levels of the silhouette a capture bakes for the shadow, 0 while it is off; for each, how far the
+        // silhouette is grown first (the outline's width, so the shadow is the whole sticker's) and how soft the blur is,
+        // in the subclass's own units. Levels past the count are ignored.
+        private protected abstract int BlurLevels { get; }
+        private protected abstract Vector3 BlurSoftness { get; }
+        private protected abstract Vector3 BlurGrowth { get; }
+
+        private (float cutoff, int resolution, float width, Vector3 shadowSoftness, Vector3 shadowGrowth, int shadowLevels) CaptureInputs =>
+            (alphaCutoff, resolution, CaptureWidth, BlurSoftness, BlurGrowth, BlurLevels);
 
         protected virtual void Awake() {
             material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
 
-            capture.Allocate(resolution * resolution);
+            capture.Allocate(resolution * resolution, BlurLevels > 0);
+            material.SetKeyword(new LocalKeyword(material.shader, SHADOW_KEYWORD), BlurLevels > 0);
 
-            // On GLES the first draw with each shader holds the main thread about 6 ms while the render thread builds its
-            // program (measured on a PowerVR phone); done here, it lands in loading instead of on the first selection.
-            capture.Warm(material);
+            Warm();
 
             Spawn();
             ApplyRendering();
@@ -103,26 +117,59 @@ namespace RiseOn.Outline2D {
             return child;
         }
 
-        // Runs the due capture with the current settings, its frame padded by a distance in this transform's units. True
-        // when it took a new field texture, which whatever shows the last field does not point at.
-        private protected bool RunCapture(IMaskSource source, float padding) {
+        // Runs the due capture with the current settings, scaled from the subclass's units into this transform's by
+        // toLocal: the frame padded by the width, the shadow's levels grown and blurred as set. True when it took a new
+        // field texture, which whatever shows the last field does not point at.
+        private protected bool RunCapture(IMaskSource source, float toLocal) {
             lastInputs = CaptureInputs;
 
-            var reallocated = capture.Allocate(resolution * resolution);
+            var reallocated = capture.Allocate(resolution * resolution, lastInputs.shadowLevels > 0);
 
-            capture.Run(source, this, padding, alphaCutoff);
+            capture.Run(source, this, lastInputs.width * toLocal, alphaCutoff
+              , lastInputs.shadowSoftness * toLocal, lastInputs.shadowGrowth * toLocal, lastInputs.shadowLevels);
 
             return reallocated;
         }
 
-        // Tuning in the inspector while playing: what needs no new capture shows at once; cutoff, resolution and the
-        // width's padding take a fresh capture, one at a time however fast a slider moves.
+        // Tuning in the inspector while playing: what needs no new capture shows at once; cutoff, resolution, the
+        // padding, turning the shadow on or off, its softness and, while it shows, the width take a fresh capture, one
+        // at a time however fast a slider moves.
         protected virtual void OnValidate() {
             if (material == null) return;
 
+            ApplySettings();
+        }
+
+        // A setting changed: what needs no new capture shows at once, the rest once the capture in flight has landed.
+        private protected void ApplySettings() {
             ApplyRendering();
 
-            if (lastInputs != CaptureInputs) capture.MarkOutdated();
+            if (material != null && lastInputs != CaptureInputs) capture.MarkOutdated();
+        }
+
+        // On GLES the first draw with each shader holds the main thread about 6 ms while the render thread builds its
+        // program (measured on a PowerVR phone); done in Awake, it lands in loading instead of on the first selection.
+        private protected virtual void Warm() => capture.Warm(material);
+
+        // Puts the outline on a material of the variant with the shadow or without it; true when that took a new material,
+        // which whatever draws the outline must be handed. A new one rather than the keyword flipped on this one: a Mask
+        // keeps its stencil copy for as long as the material under it is the same object. Turning the shadow on warms its
+        // variant there and then, as Awake warms the one it starts with.
+        private protected bool ApplyShadowKeyword() {
+            var keyword = new LocalKeyword(material.shader, SHADOW_KEYWORD);
+            var on = BlurLevels > 0;
+
+            if (material.IsKeywordEnabled(keyword) == on) return false;
+
+            var next = new Material(material) { hideFlags = HideFlags.HideAndDontSave };
+
+            next.SetKeyword(keyword, on);
+            OutlineMask.SafeDestroy(material);
+            material = next;
+
+            if (on) Warm();
+
+            return true;
         }
 
         protected virtual void Reset() {

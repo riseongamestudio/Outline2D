@@ -4,11 +4,12 @@
 
 Phần nội bộ biến một nhóm target thành distance field, dùng chung cho `OutlineSprite` và
 `OutlineImage`. `OutlineCapture` điều phối các lần chụp của một component: `OutlineFrame` chọn
-khung chụp, `OutlineMask` chụp silhouette trên GPU và đọc về, `OutlineField` tính khoảng cách
-trên worker thread và upload thành texture. Nguồn vẽ (`IMaskSource`) cho biết nhóm trông ra sao;
-phần giữ danh sách và tính bounds chung ở `MaskSource<T>`, còn `SpriteSource` và `ImageSource`
-nằm cạnh component dùng chúng. `Outline2DResources` giữ shader mask cho `OutlineMask` (xem
-[Shader](../Shaders/README.md)). Tất cả là `internal`.
+khung chụp, `OutlineMask` chụp silhouette trên GPU và đọc về, `OutlineField` tính khoảng cách (và
+blur của bóng khi được yêu cầu) trên worker thread và upload thành texture. Nguồn vẽ
+(`IMaskSource`) cho biết nhóm trông ra sao; phần giữ danh sách và tính bounds chung ở
+`MaskSource<T>`, còn `SpriteSource` và `ImageSource` nằm cạnh component dùng chúng.
+`Outline2DResources` giữ shader mask cho `OutlineMask` (xem [Shader](../Shaders/README.md)). Tất
+cả là `internal`.
 
 Những điều dưới đây không suy ra được từ việc đọc từng file.
 
@@ -24,16 +25,16 @@ theo khung đã upload, không bao giờ theo khung mà texture chưa có.
 
 ## Khung chụp theo ngân sách texel
 
-Khung là bounds của các target trong không gian local của component viền, cộng vùng đệm (độ
-dày lớn nhất, đổi sang local theo scale lúc chụp), cộng thêm 2 texel mỗi phía cho mép khử răng
-cưa. Texel luôn vuông. Cạnh texel được giải thẳng từ phương trình
-`(rộng·k + 4)(cao·k + 4) = resolution²`, rồi nới ra nếu một cạnh vượt `2·resolution`. Vì
-thế chi phí mọi khâu phía sau chỉ theo `resolution`: nhóm to thì mỗi texel phủ nhiều đơn vị hơn,
-không phải tốn thêm texel.
+Khung là bounds của các target trong không gian local của component viền, cộng vùng đệm (độ dày
+lớn nhất, cộng khoảng cách và độ mềm lớn nhất của bóng khi có bóng; đổi sang local theo scale lúc
+chụp), cộng thêm 2 texel mỗi phía cho mép khử răng cưa. Texel luôn vuông. Cạnh texel được giải
+thẳng từ phương trình `(rộng·k + 4)(cao·k + 4) = resolution²`, rồi nới ra nếu một cạnh vượt
+`2·resolution`. Vì thế chi phí mọi khâu phía sau chỉ theo `resolution`: nhóm to thì mỗi texel phủ
+nhiều đơn vị hơn, không phải tốn thêm texel.
 
 Mask và field được cấp phát một lần, vuông, cạnh `2·resolution`; mỗi lần chụp chỉ dùng góc
-dưới trái rộng × cao. Chọn nhóm không bao giờ cấp phát bộ nhớ GPU; chỉ đổi `resolution` mới cấp
-phát lại, ngay trước lần chụp kế tiếp.
+dưới trái rộng × cao. Chọn nhóm không bao giờ cấp phát bộ nhớ GPU; chỉ đổi `resolution` hoặc bật,
+tắt bóng mới cấp phát lại, ngay trước lần chụp kế tiếp.
 
 ## Nguồn vẽ
 
@@ -76,6 +77,31 @@ Chạy bằng Burst trên worker thread thay vì compute shader vì:
 
 Cái giá là viền hiện trễ vài frame sau khi chọn.
 
+## Blur của bóng
+
+Khi component có bóng, field còn có thêm một đến ba mức bóng trong kênh G, B, A (`OutlineSprite`
+ba mức theo zoom, `OutlineImage` một mức); R vẫn là khoảng cách. Mỗi mức là silhouette nở thêm một
+khoảng (độ dày viền ở mức đó, để bóng là của cả tấm sticker), đọc thẳng từ khoảng cách trong R với
+mép mềm một texel, rồi blur Gaussian. Không vẽ thêm, không đọc về thêm.
+
+- **Nửa độ phân giải.** Mỗi khối 2×2 texel của silhouette đã nở gộp thành một (trung bình), blur
+  trên lưới nhỏ đó rồi nội suy song tuyến tính lên khi ghi vào field. Mép bóng mềm không có chi
+  tiết nhỏ hơn hai texel để mất, còn chi phí chỉ bằng một phần tư. Bóng sắc hơn thế thì shader vẽ
+  mép từ R chứ không từ các mức này (xem [Lớp nền](../README.md#bóng-đổ)). Đã so trên
+  silhouette quyển sách của OrganiCat: chênh lệch trung bình 0.5% ở mức sắc nhất (sigma 3.5 texel),
+  lớn nhất 4% trên một dải mảnh dọc mép.
+- **Gần Gaussian bằng ba lượt box.** Mỗi mức là ba lượt box blur mỗi chiều, độ rộng chọn theo
+  *Fast almost-Gaussian filtering* (Kutskir) để tổng phương sai gần bằng sigma² (độ rộng box là
+  số nguyên). Mỗi lượt là một tổng cộng dồn, nên chi phí không phụ thuộc độ mềm. Độ mềm (quãng
+  mép bóng mờ dần) là ba sigma.
+- **Chạy sau distance transform.** Phần nở cần khoảng cách, nên `BlurRowJob` (đọc R, nở từng
+  mức, gộp 2×2 rồi blur theo hàng; mỗi khoảng cách đọc một lần cho cả ba mức) chạy sau
+  `ColumnJob`. `BlurColumnJob` blur theo cột tại chỗ, rồi `BlurWriteJob` nội suy lên và ghi G, B,
+  A. Các job nối tiếp nhau nên không có hai job nào cùng ghi field một lúc.
+- **Đo trong Editor** (Ryzen 9, Burst, khung khoảng 65K texel): thời gian chờ toàn bộ job từ lúc
+  xếp lịch tới lúc xong khoảng 0.27 ms khi không có bóng và 0.61 ms khi có ba mức, tức khoảng 2.2
+  lần. Chưa đo trên máy thật.
+
 ## Đo trên máy thật
 
 OPPO CPH2121 (Helio P90, PowerVR GM9446, OpenGL ES 3), Development Build, game khoá
@@ -102,12 +128,15 @@ Image trước khi vẽ. Chưa đo trên máy thật.
 
 - Bình phương khoảng cách được tính bằng float trong pass cột; chúng chính xác tới 2²⁴, tức
   cạnh tối đa 2048. Cạnh bị kẹp ở đó; `resolution` lớn nhất 1024 dùng đúng 2048.
-- Field là `R16_SFloat`, khoảng cách tính bằng texel. Không dùng `R32F` vì OpenGL ES 3.0
-  không bắt buộc lọc tuyến tính cho nó; không dùng `R16` unorm vì đó chỉ là extension.
+- Field là `R16_SFloat`, khoảng cách tính bằng texel; có bóng thì là `R16G16B16A16_SFloat`, G, B,
+  A giữ độ phủ của các mức blur. Không dùng `R32F` vì OpenGL ES 3.0 không bắt buộc lọc tuyến tính
+  cho nó; không dùng `R16` unorm vì đó chỉ là extension. Half-float RGBA thì OpenGL ES 3.0 lọc
+  tuyến tính được.
 - Khoảng cách không bị kẹp (lớn nhất khoảng 2900 texel, half-float vẫn giữ được). Mép ngoài
   của vành mềm trong nửa pixel màn hình, tức nhiều texel khi một pixel phủ nhiều texel (zoom
   xa, `resolution` cao), nên khoảng cách phải tiếp tục tăng tới tận mép quad. Bản đầu kẹp ở
   bán kính lớn nhất cộng 2 texel và cả quad bị ám màu viền: đo ở `resolution` 1024, ortho 25.
-- Mỗi lần upload cả texture field. Texel ngoài khung chụp là rác của lần trước và
-  không bao giờ được lấy mẫu: góc quad đặt ở tâm texel viền nên lọc tuyến tính không với ra
-  ngoài.
+- Mỗi lần upload cả texture field. Texel ngoài khung chụp là rác của lần trước. Vành không bao
+  giờ lấy mẫu ở đó: góc quad đặt ở tâm texel viền nên lọc tuyến tính không với ra ngoài. Bóng
+  đọc field tại điểm đã dịch nên có thể với ra ngoài; shader kiểm điểm đó có nằm trong khung
+  không và bỏ nếu không.

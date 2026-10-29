@@ -11,6 +11,16 @@ namespace RiseOn.Outline2D {
     /// Collapsed until opened.
     /// </summary>
     internal sealed class PlainFoldoutGroupAttribute : PropertyGroupAttribute {
+        /// <summary>
+        /// A bool member of the group drawn as a checkbox in the header instead of in the group; the group opens only<br/>
+        /// while it is on, and opens when it is turned on. Set on any one member.
+        /// </summary>
+        public string Toggle;
+
         public PlainFoldoutGroupAttribute(string groupId) : base(groupId) { }
+
+        protected override void CombineValuesWith(PropertyGroupAttribute other) {
+            Toggle ??= ((PlainFoldoutGroupAttribute)other).Toggle;
+        }
     }
 }

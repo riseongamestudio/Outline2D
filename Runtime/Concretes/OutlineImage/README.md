@@ -4,8 +4,9 @@
 
 `OutlineImage` viền một nhóm `Image`, hợp đồng là `IOutlineImage`. Viền được vẽ bằng một Graphic
 tự sinh trên con ẩn ([Lớp nền](../../README.md#con-ẩn-vẽ-viền)): `OutlineGraphic`, một
-`MaskableGraphic` nội bộ, vẽ qua `CanvasRenderer` như mọi Graphic của uGUI. Màu và *Maskable*
-đặt trên component. Thư mục này còn chứa shader viền UI và nguồn vẽ `ImageSource`; phần chụp và
+`MaskableGraphic` nội bộ, vẽ qua `CanvasRenderer` như mọi Graphic của uGUI; bóng đổ tuỳ chọn
+([Lớp nền](../../README.md#bóng-đổ)) vẽ chung với viền. Màu, bóng và *Maskable* đặt trên
+component. Thư mục này còn chứa shader viền UI và nguồn vẽ `ImageSource`; phần chụp và
 distance field dùng chung với `OutlineSprite` ([Field](../../Field/README.md)).
 
 - [Hợp đồng của SetTargets](#hợp-đồng-của-settargets)
@@ -22,7 +23,8 @@ distance field dùng chung với `OutlineSprite` ([Field](../../Field/README.md)
 - Chuỗi Image được đọc hết ngay trong lúc gọi rồi bỏ; Image null bị bỏ qua. Truyền `null` hoặc
   chuỗi rỗng là tắt viền.
 - Viền cũ tắt ngay lúc gọi, vì nó thuộc về nhóm cũ. Viền mới hiện sau vài frame: chụp mask,
-  đọc mask về (bất đồng bộ), distance transform trên worker thread, upload, rồi mới hiện.
+  đọc mask về (bất đồng bộ), distance transform (và blur của bóng) trên worker thread, upload,
+  rồi mới hiện.
 - Gọi nhiều lần trong một frame thì chỉ lần cuối được chụp. Kết quả của một lần chụp về
   sau khi đã có lần gọi mới thì bị bỏ.
 - Silhouette chụp một lần. Nhóm đổi hình dạng giữa chừng (bật, tắt, đổi sprite, đổi kích
@@ -59,15 +61,34 @@ lại, nên mỗi khi có lần chụp đến hạn (`SetTargets`, đổi settin
 ## Setting
 
 Chỉnh trong Play mode: xem [Lớp nền](../../README.md#chỉnh-setting-trong-play-mode). Độ dày
-cũng đổi ngay, trong phạm vi vùng đệm của lần chụp trước.
+cũng đổi ngay, trong phạm vi vùng đệm của lần chụp trước; khi có bóng thì kèm một lần chụp lại vì
+độ dày nằm trong vùng đệm và trong phần nở của bóng.
 
 **Visual**
 
 | Field | Ý nghĩa |
 |---|---|
-| `color` | Màu viền, cũng là `IOutline.Color`; là Color của Graphic tự sinh nên nhân alpha của CanvasGroup như mọi Graphic |
 | `alphaCutoff` | Texel của Image có alpha lớn hơn mức này thì thuộc silhouette |
-| `width` | Độ dày theo đơn vị root canvas, xem [Trong Canvas](#trong-canvas); cũng là vùng đệm của lần chụp |
+
+**Visual/Outline**
+
+| Field | Ý nghĩa |
+|---|---|
+| `color` | Màu viền, cũng là `IOutline.Color`; là Color của Graphic tự sinh nên nhân alpha của CanvasGroup như mọi Graphic |
+| `width` | Độ dày theo đơn vị root canvas, xem [Trong Canvas](#trong-canvas); là vùng đệm của lần chụp khi không có bóng, có bóng thì cộng thêm khoảng cách và độ mềm |
+
+**Visual/Shadow**
+
+| Field | Ý nghĩa |
+|---|---|
+| `shadowEnabled` | Ô đánh dấu trên tiêu đề mục: bật bóng. Tắt thì mục không mở được. Mặc định tắt |
+| `shadowColor` | Màu bóng, alpha là độ đục. Mặc định đen, alpha 0.5 |
+| `shadowDirection` | Hướng bóng đổ theo trục của root canvas (`DirectionExt`). Mặc định xuống |
+| `shadowDistance` | Khoảng cách bóng đổ theo đơn vị root canvas. Mặc định 8 |
+| `shadowSoftness` | Độ mềm theo đơn vị root canvas: quãng mép bóng mờ dần. Nướng vào lần chụp, một mức blur. Mặc định 10 |
+
+Bóng là của silhouette nở thêm `width`, nên khi bóng bật, vùng đệm của lần chụp là
+`width + shadowDistance + shadowSoftness`, và đổi `width` cũng phải chụp lại.
 
 **Visual/Advanced**
 
@@ -95,6 +116,14 @@ viền theo đúng hình của nó.
   resolution), bất kể scale nằm giữa root canvas và `OutlineImage`. Scale đổi sau lúc chụp,
   chẳng hạn nhóm nảy, thì viền giữ nguyên độ dày đó trong phạm vi vùng đệm đã chụp: chỉ dựng
   lại quad, không chụp lại.
+- Khoảng cách và độ mềm của bóng cũng theo đơn vị root canvas; hướng tính theo trục của root
+  canvas rồi đổi sang không gian của `OutlineImage`, nên xoay nhóm thì bóng vẫn đổ về cùng một
+  phía. Canvas không zoom nên mỗi lần chụp chỉ blur một mức. Scale đổi sau lúc chụp thì khoảng
+  cách và mép sắc vẫn giữ đơn vị (tính lại khi dựng quad), còn phần blur đã nướng nên co giãn
+  theo nhóm.
+- Canvas bỏ `uv1` và `uv2` của đỉnh trừ khi root canvas bật kênh tương ứng. Khi bóng bật,
+  `OutlineImage` tự thêm `TexCoord1` và `TexCoord2` vào *Additional Shader Channels* của root
+  canvas, như TextMesh Pro tự thêm kênh nó dùng; bóng tắt thì không đụng tới canvas.
 - Quad của viền nằm quanh nhóm chứ không nằm trên RectTransform nào, nên RectTransform của
   `OutlineImage` không cần khớp gì. Viền chỉ bị cull khi RectMask2D phía trên không còn vùng
   nhìn thấy; còn lại RectMask2D cắt từng pixel như với Image.
@@ -127,7 +156,19 @@ viền giống shader của `OutlineSprite` ([Lớp nền](../../README.md#vành
   riêng của `OutlineImage`. Bán kính vành (tính bằng texel field, đã kẹp) được tính trên CPU và
   đi trong `uv0.z`, kích thước field trong `uv0.w`; Canvas giữ đủ bốn thành phần của `uv0`
   (TextMesh Pro cũng đọc `uv0.w`). Nhờ vậy material không đổi theo instance, và Mask chép
-  material một lần là đủ.
+  material một lần là đủ. Chỉ bật, tắt bóng đổi material: component chuyển sang một material mới
+  ở biến thể kia (keyword `_SHADOW`) chứ không đổi keyword trên material cũ, vì Mask giữ bản chép
+  stencil chừng nào material gốc vẫn là cùng một object.
+- Bóng đi cùng đường đó: độ dịch (texel field, đã đổi sang không gian của `OutlineImage`) trong
+  `uv1.xy`, độ mềm (texel field) trong `uv1.z`, kích thước khung trong `uv1.w` dưới dạng
+  `rộng + cao·4096` (cạnh khung không quá 2048 nên tổng dưới 2²⁴, float giữ chính xác), màu bóng
+  trong `uv2`. Màu bóng được đổi sang linear trên CPU khi project dùng linear color space, vì Canvas
+  chỉ đổi màu đỉnh chứ không đổi `uv2`. Fragment đọc R và G tại điểm đã dịch, pha mép sắc từ khoảng
+  cách với mức blur theo độ mềm như [Lớp nền](../../README.md#bóng-đổ) tả, bỏ những điểm nằm ngoài
+  khung, rồi vẽ vành đè lên bóng.
+- Đổi màu hay hướng của bóng chỉ dựng lại mesh. Khoảng cách, độ mềm, `width` (khi có bóng) và bật,
+  tắt bóng thì chụp lại; bật, tắt còn cấp phát lại field, và viền ẩn cho tới khi field mới về thay
+  vì hiện texture chưa có gì trên khung cũ.
 - Field được đọc bằng `sampler2D_float`: trên OpenGL ES, `sampler2D` mặc định chỉ có độ chính
   xác thấp, không giữ nổi khoảng cách tính bằng texel.
 

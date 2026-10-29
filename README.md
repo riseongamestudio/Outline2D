@@ -1,9 +1,10 @@
 # RiseOn.Outline2D
 
-Viền quanh silhouette gộp của một nhóm sprite hoặc một nhóm UI Image, nở đều như
-*Select → Modify → Expand* của Photoshop: mọi điểm cách silhouette không quá độ dày đều
-thuộc viền, đúng ở mọi độ dày, góc lồi bo tròn thật. Nhóm chỉ cần biết lúc gọi, không phải
-setup gì trên từng sprite hay từng Image.
+Viền quanh silhouette gộp của một nhóm sprite hoặc một nhóm UI Image, nở đều như *Select → Modify
+→ Expand* của Photoshop: mọi điểm cách silhouette không quá độ dày đều thuộc viền, đúng ở mọi độ
+dày, góc lồi bo tròn thật. Dưới viền có thể có thêm bóng đổ mềm của cả silhouette lẫn viền, như
+một tấm sticker được nhấc khỏi mặt cảnh. Nhóm chỉ cần biết lúc gọi, không phải setup gì trên từng
+sprite hay từng Image.
 
 Package `com.riseon.outline2d`, namespace `RiseOn.Outline2D`.
 
@@ -23,7 +24,8 @@ Package `com.riseon.outline2d`, namespace `RiseOn.Outline2D`.
 | Phụ thuộc | Cách có | Dùng cho |
 |---|---|---|
 | Unity 6000.3 | | Bản đang dùng để phát triển |
-| `com.unity.burst` 1.8.29 | Tự cài theo `package.json` | Distance transform trên worker thread |
+| `com.riseon.utils` 1.0.12 | Tự cài theo `package.json` | `DirectionExt`, hướng của bóng đổ |
+| `com.unity.burst` 1.8.29 | Tự cài theo `package.json` | Distance transform và blur của bóng trên worker thread |
 | `com.unity.mathematics` 1.3.3 | Tự cài theo `package.json` | Đổi float sang half trong job |
 | `com.unity.render-pipelines.universal` 17.3.0 | Tự cài theo `package.json` | Shader viền sprite (URP), URP Global Settings giữ shader mask |
 | `com.unity.ugui` 2.0.0 | Tự cài theo `package.json` | `OutlineImage` vẽ bằng một Graphic của uGUI |
@@ -48,7 +50,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
     }
   ],
   "dependencies": {
-    "com.riseon.outline2d": "1.0.5"
+    "com.riseon.outline2d": "1.1.0"
   }
 }
 ```
@@ -56,7 +58,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
 **Git URL**: *Package Manager → + → Add package from git URL*:
 
 ```
-https://github.com/riseongamestudio/Outline2D.git#v1.0.5
+https://github.com/riseongamestudio/Outline2D.git#v1.1.0
 ```
 
 **Thư mục local**: `"com.riseon.outline2d": "file:D:/path/to/Outline2D"`.
@@ -68,7 +70,7 @@ https://github.com/riseongamestudio/Outline2D.git#v1.0.5
 | **Outline** | `IOutline` (màu viền) và lớp cha `Outline`: setting chung, vòng chụp, con ẩn vẽ viền |
 | **OutlineSprite** | Component viền một nhóm sprite, vẽ bằng một SpriteRenderer tự sinh |
 | **OutlineImage** | Component viền một nhóm UI Image, vẽ bằng một Graphic tự sinh |
-| **Field** (nội bộ) | Chụp silhouette trên GPU, distance transform trên CPU, texture khoảng cách; dùng chung cho cả hai component |
+| **Field** (nội bộ) | Chụp silhouette trên GPU, distance transform và blur của bóng trên CPU, texture field; dùng chung cho cả hai component |
 | **Shader** | Shader chụp silhouette; shader viền nằm cạnh component của nó |
 | **Adapter** | Tween màu viền bằng LitMotion hoặc DOTween, tự bật khi project có thư viện |
 
@@ -78,8 +80,9 @@ không lưu vào scene, và code bên ngoài không biết tới nó. Code bên 
 (màu, chung cho cả hai). Mọi thứ còn lại là `internal`.
 
 Việc nặng chỉ xảy ra lúc đổi nhóm: vẽ các target vào một mask, đọc mask về, tính khoảng
-cách tới silhouette cho từng texel. Trong lúc giữ nhóm, mỗi frame chỉ là một quad. Nhóm di
-chuyển, camera di chuyển, zoom hay nhóm nảy (scale) đều không phải chụp lại.
+cách tới silhouette cho từng texel và, khi có bóng, nở rồi blur silhouette. Trong lúc giữ nhóm, mỗi
+frame chỉ là một quad, vành và bóng vẽ chung. Nhóm di chuyển, camera di chuyển, zoom hay nhóm
+nảy (scale) đều không phải chụp lại.
 
 ## Hướng dẫn nhanh
 
@@ -89,7 +92,9 @@ chuyển, camera di chuyển, zoom hay nhóm nảy (scale) đều không phải 
    Interaction* của viền chỉnh ngay trên component.
 2. Cho GameObject đó bám theo nhóm sprite: làm con của nhóm, hoặc dùng Position / Rotation /
    Scale Constraint. Viền được chụp trong không gian local của nó nên phải cứng với nhóm.
-3. Chỉnh độ dày theo zoom và độ phân giải chụp, rồi gọi `SetTargets`.
+3. Chỉnh độ dày theo zoom, bóng (bật ở ô đánh dấu trên tiêu đề *Shadow*; màu, hướng, khoảng
+   cách và độ mềm, hai thứ sau cũng theo zoom, chung một `orthoRange` với độ dày) và độ phân giải
+   chụp, rồi gọi `SetTargets`.
 
 **UI Image**
 
@@ -97,7 +102,8 @@ chuyển, camera di chuyển, zoom hay nhóm nảy (scale) đều không phải 
    hierarchy: đặt nó sau các Image cần viền. Nằm dưới cùng Mask / RectMask2D với các Image đó
    thì viền cũng bị cắt như chúng.
 2. Cho nó cứng với nhóm, thường là làm con của nhóm hoặc của cùng content đang cuộn.
-3. Chỉnh màu, độ dày `width` (đơn vị của root canvas) và *Maskable*, rồi gọi `SetTargets`.
+3. Chỉnh màu, độ dày `width`, bóng (bật ở ô đánh dấu trên tiêu đề *Shadow*; màu, hướng, khoảng
+   cách, độ mềm) và *Maskable*, rồi gọi `SetTargets`. Độ dài đều tính bằng đơn vị của root canvas.
 
 ```csharp
 outline.SetTargets(targets); // chọn nhóm mới
@@ -125,10 +131,10 @@ nó, nhưng các điểm móc của nó là `private protected`, nên ngoài pac
 
 | Thành phần | Việc | Chi tiết |
 |---|---|---|
-| Lớp nền | `IOutline`, lớp cha `Outline`, con ẩn vẽ viền, làm sẵn shader, vành viền và màu viền | [Runtime](Runtime/README.md) |
-| OutlineSprite | Hợp đồng của `SetTargets`, thời điểm chụp, vẽ bằng SpriteRenderer, setting, chọn `resolution`, độ dày theo zoom, shader viền sprite | [Runtime/Concretes/OutlineSprite](Runtime/Concretes/OutlineSprite/README.md) |
-| OutlineImage | Hợp đồng của `SetTargets`, thời điểm chụp trong Canvas, Graphic tự sinh, setting, Mask và RectMask2D, shader viền UI | [Runtime/Concretes/OutlineImage](Runtime/Concretes/OutlineImage/README.md) |
-| Field | Vòng chụp, khung chụp và ngân sách texel, readback, distance transform | [Runtime/Field](Runtime/Field/README.md) |
+| Lớp nền | `IOutline`, lớp cha `Outline`, con ẩn vẽ viền, làm sẵn shader, vành viền, bóng đổ và màu viền | [Runtime](Runtime/README.md) |
+| OutlineSprite | Hợp đồng của `SetTargets`, thời điểm chụp, vẽ bằng SpriteRenderer, setting, chọn `resolution`, độ dày và bóng theo zoom, shader viền sprite | [Runtime/Concretes/OutlineSprite](Runtime/Concretes/OutlineSprite/README.md) |
+| OutlineImage | Hợp đồng của `SetTargets`, thời điểm chụp trong Canvas, Graphic tự sinh, setting, Mask và RectMask2D, bóng trong Canvas, shader viền UI | [Runtime/Concretes/OutlineImage](Runtime/Concretes/OutlineImage/README.md) |
+| Field | Vòng chụp, khung chụp và ngân sách texel, readback, distance transform, blur của bóng | [Runtime/Field](Runtime/Field/README.md) |
 | Shader | Shader chụp silhouette, cách nó vào bản build | [Runtime/Shaders](Runtime/Shaders/README.md) |
 | Adapter | Tween màu viền bằng LitMotion, DOTween | [Runtime/Adapters](Runtime/Adapters/README.md) |
 | Editor | Báo thiếu Odin Inspector, vẽ mục gập không khung của Inspector | [Editor](Editor/README.md) |

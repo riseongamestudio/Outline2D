@@ -2,9 +2,10 @@
 
 [← RiseOn.Outline2D](../../../README.md)
 
-`OutlineSprite` viền một nhóm `SpriteRenderer`, hợp đồng là `IOutlineSprite`. Viền được vẽ bằng
-một `SpriteRenderer` tự sinh trên con ẩn ([Lớp nền](../../README.md#con-ẩn-vẽ-viền)); màu,
-sorting và mask interaction đặt trên component. Thư mục này còn chứa shader viền sprite và nguồn
+`OutlineSprite` viền một nhóm `SpriteRenderer`, hợp đồng là `IOutlineSprite`. Viền, cùng bóng đổ
+tuỳ chọn ([Lớp nền](../../README.md#bóng-đổ)), được vẽ bằng một `SpriteRenderer` tự sinh trên con
+ẩn ([Lớp nền](../../README.md#con-ẩn-vẽ-viền)); màu, bóng, sorting và mask interaction đặt trên
+component. Thư mục này còn chứa shader viền sprite và nguồn
 vẽ `SpriteSource`; phần chụp và distance field dùng chung với `OutlineImage`
 ([Field](../../Field/README.md)).
 
@@ -13,7 +14,7 @@ vẽ `SpriteSource`; phần chụp và distance field dùng chung với `Outline
 - [Vẽ bằng SpriteRenderer](#vẽ-bằng-spriterenderer)
 - [Setting](#setting)
 - [Chọn resolution](#chọn-resolution)
-- [Độ dày theo zoom](#độ-dày-theo-zoom)
+- [Độ dày và bóng theo zoom](#độ-dày-và-bóng-theo-zoom)
 - [Nguồn vẽ](#nguồn-vẽ)
 - [Shader](#shader)
 - [Giới hạn](#giới-hạn)
@@ -23,7 +24,8 @@ vẽ `SpriteSource`; phần chụp và distance field dùng chung với `Outline
 - Chuỗi renderer được đọc hết ngay trong lúc gọi rồi bỏ; renderer null bị bỏ qua. Truyền `null`
   hoặc chuỗi rỗng là tắt viền.
 - Viền cũ tắt ngay lúc gọi, vì nó thuộc về nhóm cũ. Viền mới hiện sau vài frame: chụp mask,
-  đọc mask về (bất đồng bộ), distance transform trên worker thread, upload, rồi mới hiện.
+  đọc mask về (bất đồng bộ), distance transform (và blur của bóng) trên worker thread, upload,
+  rồi mới hiện.
 - Gọi nhiều lần trong một frame thì chỉ lần cuối được chụp. Kết quả của một lần chụp về
   sau khi đã có lần gọi mới thì bị bỏ.
 - Silhouette chụp một lần. Nhóm đổi hình dạng giữa chừng (bật, tắt, đổi sprite) thì phải gọi
@@ -70,9 +72,29 @@ Chỉnh trong Play mode: xem [Lớp nền](../../README.md#chỉnh-setting-trong
 
 | Field | Ý nghĩa |
 |---|---|
-| `color` | Màu viền, alpha là độ đục; cũng là `IOutline.Color` |
 | `alphaCutoff` | Texel của sprite có alpha lớn hơn mức này thì thuộc silhouette |
-| `orthoRange`, `widthRange` | Độ dày theo world ở hai mức ortho, xem [Độ dày theo zoom](#độ-dày-theo-zoom). `max(widthRange)` còn là vùng đệm của lần chụp |
+| `orthoRange` | Hai mức ortho mà mọi range bên dưới lấy `.x` và `.y`, xem [Độ dày và bóng theo zoom](#độ-dày-và-bóng-theo-zoom) |
+
+**Visual/Outline**
+
+| Field | Ý nghĩa |
+|---|---|
+| `color` | Màu viền, alpha là độ đục; cũng là `IOutline.Color` |
+| `widthRange` | Độ dày theo world ở hai mức ortho. `max(widthRange)` là vùng đệm của lần chụp khi không có bóng; có bóng thì cộng thêm khoảng cách và độ mềm |
+
+**Visual/Shadow**
+
+| Field | Ý nghĩa |
+|---|---|
+| `shadowEnabled` | Ô đánh dấu trên tiêu đề mục: bật bóng. Tắt thì mục không mở được. Mặc định tắt |
+| `shadowColor` | Màu bóng, alpha là độ đục. Mặc định đen, alpha 0.5 |
+| `shadowDirection` | Hướng bóng đổ theo trục world (`DirectionExt`: trái, phải, lên, xuống, hoặc góc tự chọn). Mặc định xuống |
+| `shadowDistanceRange` | Khoảng cách bóng đổ theo world ở hai mức ortho. Mặc định (0.12, 0.48) |
+| `shadowSoftnessRange` | Độ mềm theo world ở hai mức ortho: quãng mép bóng mờ dần. Nướng vào lần chụp. Mặc định (0.12, 0.48) |
+
+Bóng là của silhouette nở thêm độ dày viền, nên khi bóng bật, vùng đệm của lần chụp là
+`max(widthRange) + max(shadowDistanceRange) + max(shadowSoftnessRange)`, và đổi `widthRange` cũng
+phải chụp lại.
 
 **Visual/Advanced**
 
@@ -91,7 +113,10 @@ Chỉnh trong Play mode: xem [Lớp nền](../../README.md#chỉnh-setting-trong
 Mỗi cạnh của khung chụp tối đa `2·resolution` (256 là 512): nhóm dẹt tới 4:1 vẫn dùng hết
 `resolution²` pixel, dẹt hơn thì chụp ít pixel hơn chứ không tốn thêm. Bộ đệm giữ sẵn theo
 đúng cạnh đó: khoảng `12·resolution²` byte trên GPU (mask R8, field half-float) và
-`33·resolution²` byte trên CPU; 256 là 768 KB và 2.1 MB, 1024 là 12 MB và 33 MB.
+`33·resolution²` byte trên CPU; 256 là 768 KB và 2.1 MB, 1024 là 12 MB và 33 MB. Khi bóng bật,
+field có bốn kênh half-float (cả mảng job lẫn bản CPU của texture) và thêm ba mặt phẳng blur
+nửa độ phân giải: khoảng `36·resolution²` byte trên GPU và `93·resolution²` byte trên CPU; 256
+là 2.3 MB và 5.8 MB, 1024 là 36 MB và 93 MB.
 
 Màu và alpha của các sprite trong nhóm không ảnh hưởng silhouette: sprite đang mờ đi vẫn được
 viền theo đúng hình của nó.
@@ -114,25 +139,50 @@ distance transform và upload đo trong Editor (Ryzen 9, Burst).
   trên màn hình. Trong ảnh so sánh, lệch cỡ nửa pixel trở xuống thì mép viền trông mịn; từ 1 px
   trở lên thì thấy gợn sóng dọc các cạnh chéo (128 và 64 ở zoom gần).
 - Texel tỉ lệ với cỡ nhóm: nhóm to gấp đôi thì cần `resolution` gấp đôi để giữ cùng độ mịn.
+- Vùng đệm cũng ăn vào ngân sách: bóng xa và mềm làm khung rộng ra, mỗi texel phủ nhiều world hơn,
+  nên có thể cần nâng `resolution` để giữ mép viền mịn như khi không có bóng.
 - Chi phí tăng theo `resolution²`. Trên OPPO CPH2121, distance transform một luồng đo được
   3.1 ms ở 256 và 12.6 ms ở 512, khoảng 3.3 lần số Editor ở trên (bảng đầy đủ ở
   [Field](../../Field/README.md#đo-trên-máy-thật)).
 
-## Độ dày theo zoom
+## Độ dày và bóng theo zoom
 
 `widthRange.x` là độ dày (đơn vị world) khi camera có orthographic size bằng
 `orthoRange.x`, `widthRange.y` ứng với `orthoRange.y`. Ở giữa thì nội suy tuyến tính, ra ngoài
 khoảng thì giữ ở đầu gần nhất. Hai đầu cùng tỉ lệ với nhau là độ dày không đổi theo pixel màn
 hình; hai đầu bằng nhau là độ dày không đổi theo world.
 
+`shadowDistanceRange` và `shadowSoftnessRange` theo đúng cách đó, cùng một `orthoRange`, nên
+vành và bóng giữ nguyên tỉ lệ với nhau ở mọi mức zoom. Khoảng cách chỉ là chỗ shader đọc field,
+nên đổi liên tục; độ mềm ở mức zoom đang vẽ cũng vào shader để chọn giữa mép sắc từ khoảng cách
+và blur (xem [Lớp nền](../../README.md#bóng-đổ)). Phần blur thì đã nướng: mỗi lần chụp làm ba
+mức, mỗi mức là một mức zoom (hai đầu của `orthoRange` và một mức ở giữa), nở theo độ dày và blur
+theo độ mềm của chính mức zoom đó; shader pha hai mức kề nhau theo zoom đang vẽ.
+
+Shader pha vị trí mép chứ không pha độ phủ. Hai mức nở theo hai độ dày khác nhau có mép lệch
+nhau; pha độ phủ thì thấy cả hai mép, thành một dốc lúc rộng lúc hẹp khi zoom. Mép đã blur gần
+với đường cong logistic, nên logit của độ phủ là khoảng cách tới mép chia cho độ rộng blur; shader
+pha các logit (nhân độ rộng blur của từng mức, tính cả phần mềm do nửa độ phân giải) rồi đổi
+ngược ra độ phủ. Trên mép thẳng, kết quả gần như một lần blur ở độ dày và độ mềm nằm giữa hai
+mức (mép blur là đường Gauss, chỉ gần logistic); ở góc và chỗ mảnh thì sai khác lớn hơn, nhưng ở
+đâu kết quả cũng nằm giữa độ phủ của hai mức.
+
+Mức giữa đặt ở chỗ độ mềm bằng trung bình nhân của hai đầu (đầu sắc hơn được nâng lên ít nhất
+1/16 đầu mềm hơn trước khi lấy trung bình nhân, nên một đầu bằng 0 vẫn có mức ở giữa; hai đầu
+bằng nhau thì mức giữa ở chính giữa). Với dải độ mềm tới 4:1, hai mức kề nhau cách nhau không quá
+2 lần, nên ở góc và chỗ mảnh hai mức vẫn gần nhau.
+
 Camera chỉ tham gia lúc vẽ: shader đọc ortho size của chính camera đang vẽ nên nhiều camera
-vẫn đúng, và zoom không bao giờ phải chụp lại. Khâu chụp chỉ cần một hằng số là độ dày lớn
-nhất, `max(widthRange)`, làm vùng đệm quanh silhouette. Vì vậy `widthRange` rộng thì vùng
-đệm to và mỗi texel phủ nhiều world hơn: đó là cái giá của việc cho độ dày chạy theo zoom.
+vẫn đúng, và zoom không bao giờ phải chụp lại. Khâu chụp chỉ cần một hằng số làm vùng đệm
+quanh silhouette: độ dày lớn nhất, `max(widthRange)`, cộng tầm với lớn nhất của bóng
+(`max(shadowDistanceRange) + max(shadowSoftnessRange)`) khi có bóng. Vì vậy range rộng thì vùng
+đệm to và mỗi texel phủ nhiều world hơn: đó là cái giá của việc cho độ dày và bóng chạy theo
+zoom.
 
 Độ dày theo world được đổi sang không gian local bằng scale hiện tại của `OutlineSprite`, nên
 nhóm nảy (scale) sau lúc chụp thì viền vẫn giữ đúng độ dày world. Viền bị kẹp để không vượt
-vùng đệm đã chụp.
+vùng đệm đã chụp. Khoảng cách và mép sắc của bóng cũng được tính lại như vậy; phần blur thì đã
+nướng theo scale lúc chụp nên co giãn theo nhóm.
 
 ## Nguồn vẽ
 
@@ -159,6 +209,21 @@ sprite và hình học đã lật sẵn theo `flipX` / `flipY` (đã đo: trùng
   vẽ), nội suy độ dày world theo `_OrthoRange` / `_WidthRange`, đổi sang texel bằng độ dài trục
   X của ma trận object và `_TexelSize`, rồi kẹp ở `_MaxRadius` để vành không chạy ra khỏi vùng
   đã chụp. Không script nào phải cập nhật material theo camera.
+- Bóng cũng tính trong vertex shader với cùng hệ số zoom: khoảng cách nội suy từ
+  `_ShadowDistanceRange`, nhân hướng `_ShadowDirection` (trục world), đổi sang không gian object
+  bằng ma trận world-to-object rồi sang texel; hệ số zoom đổi thành trọng số của hai mức kề nhau
+  (G là đầu gần, B là mức giữa ở `_ShadowLevels.x`, A là đầu xa), nhân độ rộng blur của từng mức
+  để fragment pha theo logit (xem [Độ dày và bóng theo zoom](#độ-dày-và-bóng-theo-zoom)).
+  Độ mềm nội suy từ
+  `_ShadowSoftnessRange`, đổi sang texel như độ dày, thành độ rộng ramp của mép sắc và tỉ lệ pha
+  giữa mép sắc và blur. Fragment đọc R, G, B, A tại điểm đã dịch, bỏ những điểm nằm ngoài khung
+  (`_FrameSize`), rồi vẽ vành đè lên bóng.
+- `_ShadowLevels.w` cho biết field đang hiện có các mức bóng hay không. Field chụp không có bóng
+  thì trọng số và phần mép sắc bằng 0: texture một kênh đọc ra A bằng 1, nên nếu không vậy thì
+  bật bóng đúng lúc một lần chụp không bóng đang chạy sẽ phủ bóng kín khung. Độ mềm bằng 0 thì
+  vẫn là bóng sắc, không phải tắt.
+- `_ShadowLevels` được đặt cùng lúc field mới hiện, không phải lúc bắt đầu chụp, nên trong lúc
+  lần chụp sau đang chạy, shader vẫn pha đúng các mức của field đang hiện.
 
 ## Giới hạn
 
@@ -169,3 +234,5 @@ sprite và hình học đã lật sẵn theo `flipX` / `flipY` (đã đo: trùng
 - Silhouette chỉ theo alpha của texture chính: texture alpha tách rời (ETC1 split alpha) không
   được tính.
 - Sprite trong nhóm ở *Draw Mode* Sliced / Tiled chưa được kiểm.
+- Bóng vẽ ở sorting của viền, nên đổ lên những gì nằm dưới order đó và bị những gì nằm trên che;
+  SpriteMask cắt bóng như cắt viền.
