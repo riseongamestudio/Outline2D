@@ -4,6 +4,17 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.2.0] - 2026-10-30
+
+### Thêm
+
+- `IOutlineSprite.OrthoRange` và `IOutlineSprite.WidthRange` (cùng property trên `OutlineSprite`):
+  khoảng orthographic và độ dày viền theo world ở hai đầu của nó, đọc và đặt được từ code như các
+  thông số bóng. Đặt lại thì chụp mới, vì độ dày là lề của lần chụp và độ mềm của bóng được nướng
+  theo khoảng zoom.
+- `IOutlineImage.Width` (cùng property trên `OutlineImage`): độ dày viền theo đơn vị root canvas;
+  đặt lại thì chụp mới.
+
 ## [1.1.0] - 2026-10-29
 
 ### Thêm

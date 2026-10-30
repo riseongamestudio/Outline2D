@@ -96,6 +96,14 @@ namespace RiseOn.Outline2D {
             }
         }
 
+        public float Width {
+            get => width;
+            set {
+                width = value;
+                ApplySettings();
+            }
+        }
+
         public float ShadowDistance {
             get => shadowDistance;
             set {

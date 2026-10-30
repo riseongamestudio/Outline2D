@@ -18,6 +18,18 @@ namespace RiseOn.Outline2D {
         /// <summary>How the outline interacts with SpriteMasks, as a sprite's.</summary>
         SpriteMaskInteraction MaskInteraction { get; set; }
 
+        /// <summary>
+        /// Orthographic sizes at which every range below takes its .x and its .y; interpolated between, held outside.<br/>
+        /// The shadow's softness is baked at three zooms of it, so changing it takes a new capture.
+        /// </summary>
+        Vector2 OrthoRange { get; set; }
+
+        /// <summary>
+        /// World width of the outline at the two ends of the orthographic range. Shows at once; the larger end is<br/>
+        /// the capture's padding, so changing it also takes a new capture.
+        /// </summary>
+        Vector2 WidthRange { get; set; }
+
         /// <summary>Whether the shadow shows. Turning it on or off takes a new capture.</summary>
         bool ShadowEnabled { get; set; }
 

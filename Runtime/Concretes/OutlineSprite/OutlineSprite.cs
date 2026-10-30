@@ -104,6 +104,22 @@ namespace RiseOn.Outline2D {
             }
         }
 
+        public Vector2 OrthoRange {
+            get => orthoRange;
+            set {
+                orthoRange = value;
+                ApplySettings();
+            }
+        }
+
+        public Vector2 WidthRange {
+            get => widthRange;
+            set {
+                widthRange = value;
+                ApplySettings();
+            }
+        }
+
         // Turning the shadow on or off takes a new capture, into a field with the blur or without it.
         public bool ShadowEnabled {
             get => shadowEnabled;

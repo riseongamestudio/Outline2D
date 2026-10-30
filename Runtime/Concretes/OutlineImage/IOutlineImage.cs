@@ -12,6 +12,12 @@ namespace RiseOn.Outline2D {
         /// <summary>Whether Masks and RectMask2D above the outline clip it, as a Graphic's maskable.</summary>
         bool Maskable { get; set; }
 
+        /// <summary>
+        /// Width of the outline. Shows at once; it is the capture's padding, so changing it also takes a new<br/>
+        /// capture.
+        /// </summary>
+        float Width { get; set; }
+
         /// <summary>Whether the shadow shows. Turning it on or off takes a new capture.</summary>
         bool ShadowEnabled { get; set; }
 
