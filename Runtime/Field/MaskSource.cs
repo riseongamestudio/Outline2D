@@ -48,13 +48,15 @@ namespace RiseOn.Outline2D {
             return min.x <= max.x;
         }
 
+        // Only what draws something now, as for the bounds: DrawRenderer draws a renderer that is off or inactive all the
+        // same.
         public virtual void Draw(CommandBuffer cmd, Material material) {
             foreach (var target in targets) {
-                if (target != null) DrawTarget(cmd, material, target);
+                if (target != null && TryGetLocalBounds(target, out _)) DrawTarget(cmd, material, target);
             }
         }
 
-        /// <summary>The target's box in its own local space; false when it draws nothing.</summary>
+        /// <summary>The target's box in its own local space; false when it draws nothing, so it is left out of the capture.</summary>
         protected abstract bool TryGetLocalBounds(TTarget target, out Bounds bounds);
 
         /// <summary>Records the target's silhouette, when it draws anything.</summary>

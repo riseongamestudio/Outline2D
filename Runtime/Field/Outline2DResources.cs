@@ -20,7 +20,11 @@ namespace RiseOn.Outline2D {
         [SerializeField, ResourcePath("Runtime/Shaders/OutlineMask.shader")]
         private Shader maskShader;
 
+        [SerializeField, ResourcePath("Runtime/Shaders/OutlineJumpFlood.shader")]
+        private Shader jumpFloodShader;
+
         public Shader MaskShader => maskShader;
+        public Shader JumpFloodShader => jumpFloodShader;
 
         int IRenderPipelineGraphicsSettings.version => version;
         bool IRenderPipelineGraphicsSettings.isAvailableInPlayerBuild => true;

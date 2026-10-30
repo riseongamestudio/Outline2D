@@ -39,6 +39,7 @@ namespace RiseOn.Outline2D {
         private bool running;
 
         public Texture2D Texture => texture;
+        public GraphicsFormat Format => texture.graphicsFormat;
         public int Size { get; }
 
         /// <summary>The texture holds the shadow's blur levels next to the distance.</summary>
@@ -170,6 +171,11 @@ namespace RiseOn.Outline2D {
             var below = (int)math.round((12 * sigma * sigma - PASSES * lower * lower - 4 * PASSES * lower - 3 * PASSES) / (-4f * lower - 4));
 
             return new int3(0 < below ? lower : upper, 1 < below ? lower : upper, 2 < below ? lower : upper) / 2;
+        }
+
+        /// <summary>Waits for the scheduled jobs on this thread, so <see cref="TryUpload"/> succeeds at once.</summary>
+        public void Complete() {
+            handle.Complete();
         }
 
         /// <summary>Uploads the field once the transform is done; false while it is still running.</summary>

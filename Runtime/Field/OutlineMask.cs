@@ -51,19 +51,18 @@ namespace RiseOn.Outline2D {
             }
         }
 
-        /// <summary>Captures the source into frame.Width x frame.Height texels and hands the bytes to onData.</summary>
-        public void Capture(IMaskSource source, Matrix4x4 worldToLocal, in OutlineFrame frame, float cutoff, DataHandler onData) {
-            material.SetFloat(cutoffId, cutoff);
+        /// <summary>The silhouette, in the bottom-left frame.Width x frame.Height texels, once a recorded draw has run.</summary>
+        public RenderTexture Texture => texture;
 
+        /// <summary>
+        /// Captures the source into frame.Width x frame.Height texels and hands the bytes to onData; when immediate, or<br/>
+        /// without asynchronous readback, before returning, at the cost of a stall.
+        /// </summary>
+        public void Capture(IMaskSource source, Matrix4x4 worldToLocal, in OutlineFrame frame, float cutoff, bool immediate, DataHandler onData) {
             cmd.Clear();
-            cmd.SetRenderTarget(texture);
-            cmd.ClearRenderTarget(false, true, Color.clear);
-            cmd.SetViewport(new Rect(0, 0, frame.Width, frame.Height));
-            cmd.SetViewProjectionMatrices(worldToLocal, frame.Projection);
+            Record(cmd, source, worldToLocal, frame, cutoff);
 
-            source.Draw(cmd, material);
-
-            if (!SystemInfo.supportsAsyncGPUReadback) {
+            if (immediate || !SystemInfo.supportsAsyncGPUReadback) {
                 Graphics.ExecuteCommandBuffer(cmd);
                 ReadSync(this, frame, onData);
                 return;
@@ -88,6 +87,18 @@ namespace RiseOn.Outline2D {
 
                 onData(context.syncCopy.GetPixelData<byte>(0), context.Size * 4, 4);
             }
+        }
+
+        /// <summary>Records the source's silhouette into the texture, for a caller that goes on from it on the GPU.</summary>
+        public void Record(CommandBuffer target, IMaskSource source, Matrix4x4 worldToLocal, in OutlineFrame frame, float cutoff) {
+            material.SetFloat(cutoffId, cutoff);
+
+            target.SetRenderTarget(texture);
+            target.ClearRenderTarget(false, true, Color.clear);
+            target.SetViewport(new Rect(0, 0, frame.Width, frame.Height));
+            target.SetViewProjectionMatrices(worldToLocal, frame.Projection);
+
+            source.Draw(target, material);
         }
 
         /// <summary>

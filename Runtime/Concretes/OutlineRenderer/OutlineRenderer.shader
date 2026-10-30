@@ -1,10 +1,11 @@
-// Draws an OutlineSprite's outline through its SpriteRenderer, from the field the sprite carries: the ring from the
-// silhouette's edge out to the width, in the renderer's colour, from the distance in R, over a shadow of the silhouette
-// and outline: sharp from the distance in R, soft from the blur levels baked in G, B and A, one per zoom. Width, shadow
-// distance and softness are interpolated in world units from the orthographic size of the camera drawing it, and the
-// levels blended by it, so zooming never needs a new capture. The shadow is compiled in only under _SHADOW, which the
-// component sets while its shadow is on. Keeps SRP Batcher compatibility.
-Shader "RiseOn/Outline2D/OutlineSprite"
+// Draws an OutlineRenderer's outline through its SpriteRenderer, from the field the sprite carries: the ring from the
+// silhouette's edge out to the width, in the renderer's colour, from the distance in R, over a shadow. A directional
+// shadow is the silhouette and outline moved one way: sharp from the distance in R, soft from the blur levels baked in
+// G, B and A, one per zoom. A spread one fades out all around from the ring's outer edge, from the distance in R alone.
+// Width and the shadow's lengths are interpolated in world units from the orthographic size of the camera drawing it,
+// and the levels blended by it, so zooming never needs a new capture. Each shadow is compiled in only under its
+// keyword, _SHADOW or _SHADOW_SPREAD, which the component sets while that shadow is on. Keeps SRP Batcher compatibility.
+Shader "RiseOn/Outline2D/OutlineRenderer"
 {
     Properties
     {
@@ -20,6 +21,7 @@ Shader "RiseOn/Outline2D/OutlineSprite"
         _ShadowDistanceRange ("Shadow Distance Range (world)", Vector) = (0, 0, 0, 0)
         _ShadowSoftnessRange ("Shadow Softness Range (world)", Vector) = (0, 0, 0, 0)
         _ShadowLevels ("Shadow Levels (x: middle zoom, w: field has them)", Vector) = (0, 0, 0, 0)
+        _ShadowSpreadRange ("Shadow Spread Range (world)", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -37,7 +39,7 @@ Shader "RiseOn/Outline2D/OutlineSprite"
             #pragma fragment frag
             // Materials are made at run time, so shader_feature would strip the shadow from builds. Without it this is
             // the ring alone, at the ring's cost.
-            #pragma multi_compile_local _ _SHADOW
+            #pragma multi_compile_local _ _SHADOW _SHADOW_SPREAD
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             TEXTURE2D(_MainTex);
@@ -55,6 +57,7 @@ Shader "RiseOn/Outline2D/OutlineSprite"
                 float4 _ShadowDistanceRange;
                 float4 _ShadowSoftnessRange;
                 float4 _ShadowLevels;
+                float4 _ShadowSpreadRange;
             CBUFFER_END
 
             struct Attributes
@@ -73,6 +76,9 @@ Shader "RiseOn/Outline2D/OutlineSprite"
                 float2 shadowOffset : TEXCOORD2;
                 float3 shadowWeights : TEXCOORD3;
                 float2 shadowEdge : TEXCOORD4;
+                #endif
+                #ifdef _SHADOW_SPREAD
+                float spread : TEXCOORD2;
                 #endif
                 half4 color : COLOR;
             };
@@ -96,6 +102,12 @@ Shader "RiseOn/Outline2D/OutlineSprite"
                 float worldPerLocal = length(GetObjectToWorldMatrix()._m00_m10_m20);
 
                 output.radius = min(width / (worldPerLocal * _TexelSize), _MaxRadius);
+
+                #ifdef _SHADOW_SPREAD
+                // Field texels the shadow reaches past the ring for this zoom, capped so it never runs off the capture.
+                float spread = lerp(_ShadowSpreadRange.x, _ShadowSpreadRange.y, t) / (worldPerLocal * _TexelSize);
+                output.spread = min(spread, max(_MaxRadius - output.radius, 0));
+                #endif
 
                 #ifdef _SHADOW
                 // The shadow falls a world distance for this zoom along a world direction, taken into this object's space
@@ -160,7 +172,17 @@ Shader "RiseOn/Outline2D/OutlineSprite"
                 // pixel, it would tint the whole silhouette once a pixel covers more than a texel (zoomed out).
                 float inner = saturate((d - 0.5) / min(aa, 1) + 0.5);
 
-                #ifndef _SHADOW
+                #if defined(_SHADOW_SPREAD)
+                // From the ring's outer edge out to the reach, smooth at both ends; under the ring it is full, so the ring's
+                // anti-aliased edge blends into it with no gap.
+                float spreadShadow = 1 - smoothstep(0, 1, (d - input.radius - 0.5) / max(input.spread, aa));
+
+                float ringA = outer * inner * input.color.a;
+                float shadowA = spreadShadow * inner * _ShadowColor.a * input.color.a * (1 - ringA);
+                float alpha = ringA + shadowA;
+                half3 rgb = alpha > 0 ? (input.color.rgb * ringA + _ShadowColor.rgb * shadowA) / alpha : 0;
+                return half4(rgb, alpha);
+                #elif !defined(_SHADOW)
                 // A white ring, like a sprite's texture, tinted by the renderer the way every sprite is.
                 half4 ring = half4(1, 1, 1, outer * inner);
                 return ring * input.color;

@@ -28,6 +28,10 @@ namespace RiseOn.Outline2D {
             MaxRadius = maxRadius;
         }
 
+        /// <summary>The same texels over the same place: a field of one shows on the quad of the other.</summary>
+        public bool Matches(in OutlineFrame other) =>
+            Origin == other.Origin && TexelSize == other.TexelSize && Width == other.Width && Height == other.Height;
+
         /// <summary>Unity-convention ortho over the capture: SetViewProjectionMatrices converts it for the graphics API.</summary>
         public Matrix4x4 Projection => Matrix4x4.Ortho(Origin.x, Origin.x + Width * TexelSize, Origin.y, Origin.y + Height * TexelSize, -DEPTH, DEPTH);
 

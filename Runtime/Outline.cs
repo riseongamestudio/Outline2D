@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// What <see cref="OutlineSprite"/> and <see cref="OutlineImage"/> share: the settings every capture reads, the<br/>
+    /// What <see cref="OutlineRenderer"/> and <see cref="OutlineGraphic"/> share: the settings every capture reads, the<br/>
     /// outline material, the capture, and the hidden child each spawns when it wakes to draw through. When to capture,<br/>
     /// how to show the field and what the child holds are the subclass's; only the outlines in this package derive<br/>
     /// from here.
@@ -25,14 +25,14 @@ namespace RiseOn.Outline2D {
         [SerializeField, FoldoutGroup("Visual"), PropertyOrder(-1), PropertyRange(0, 1)]
         protected float alphaCutoff = .5f;
 
-        // A capture holds about resolution² texels, spread over the group's aspect whatever its size: the one knob for cost.
-        // Drawn after the groups a subclass declares.
-        [SerializeField, FoldoutGroup("Optimizations", order: 1), PropertyRange(64, 1024)]
-        protected int resolution = 256;
+        // What captures cost and when they run. Drawn after the groups a subclass declares.
+        [SerializeField, FoldoutGroup("Performance", order: 1), InlineProperty, HideLabel]
+        protected OutlinePerformanceProfile performance = OutlinePerformanceProfile.Default;
 
-        // The outline shaders compile the shadow in only under this keyword, so an outline without one draws at the cost
-        // of the ring alone.
-        private const string SHADOW_KEYWORD = "_SHADOW";
+        // The outline shaders compile each kind of shadow in only under its keyword, so an outline without one draws at
+        // the cost of the ring alone.
+        private const string DIRECTIONAL_KEYWORD = "_SHADOW";
+        private const string SPREAD_KEYWORD = "_SHADOW_SPREAD";
 
         private protected readonly OutlineCapture capture = new();
 
@@ -41,7 +41,7 @@ namespace RiseOn.Outline2D {
         private GameObject child;
 
         // The inputs of the latest capture.
-        private (float cutoff, int resolution, float width, Vector3 shadowSoftness, Vector3 shadowGrowth, int shadowLevels) lastInputs;
+        private (float cutoff, int resolution, OutlineQuality quality, float width, Vector3 shadowSoftness, Vector3 shadowGrowth, int shadowLevels) lastInputs;
 
         public Color Color {
             get => color;
@@ -51,27 +51,40 @@ namespace RiseOn.Outline2D {
             }
         }
 
+        // Resolution and quality take a new capture; frequency and latency apply from the next one.
+        public OutlinePerformanceProfile Performance {
+            get => performance;
+            set {
+                performance = value;
+                ApplySettings();
+            }
+        }
+
         // The package's own outline shader, found by name for Reset and the Default button.
         private protected abstract string ShaderName { get; }
 
         // The width setting a capture pads its frame by, in the subclass's own units.
         private protected abstract float CaptureWidth { get; }
 
-        // How many blur levels of the silhouette a capture bakes for the shadow, 0 while it is off; for each, how far the
-        // silhouette is grown first (the outline's width, so the shadow is the whole sticker's) and how soft the blur is,
-        // in the subclass's own units. Levels past the count are ignored.
+        // The shadow the shader draws, null while it is off.
+        private protected abstract OutlineShadowType? ShadowVariant { get; }
+
+        // How many blur levels of the silhouette a capture bakes for a directional shadow, 0 for any other; for each, how
+        // far the silhouette is grown first (the outline's width, so the shadow is the whole sticker's) and how soft the
+        // blur is, in the subclass's own units. Levels past the count are ignored.
         private protected abstract int BlurLevels { get; }
         private protected abstract Vector3 BlurSoftness { get; }
         private protected abstract Vector3 BlurGrowth { get; }
 
-        private (float cutoff, int resolution, float width, Vector3 shadowSoftness, Vector3 shadowGrowth, int shadowLevels) CaptureInputs =>
-            (alphaCutoff, resolution, CaptureWidth, BlurSoftness, BlurGrowth, BlurLevels);
+        private (float cutoff, int resolution, OutlineQuality quality, float width, Vector3 shadowSoftness, Vector3 shadowGrowth, int shadowLevels) CaptureInputs =>
+            (alphaCutoff, performance.Resolution, performance.Quality, CaptureWidth, BlurSoftness, BlurGrowth, BlurLevels);
 
         protected virtual void Awake() {
             material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
 
-            capture.Allocate(resolution * resolution, BlurLevels > 0);
-            material.SetKeyword(new LocalKeyword(material.shader, SHADOW_KEYWORD), BlurLevels > 0);
+            capture.Performance = performance;
+            capture.Allocate(performance.Resolution * performance.Resolution, BlurLevels > 0);
+            SetShadowKeywords(material, ShadowVariant);
 
             Warm();
 
@@ -123,7 +136,7 @@ namespace RiseOn.Outline2D {
         private protected bool RunCapture(IMaskSource source, float toLocal) {
             lastInputs = CaptureInputs;
 
-            var reallocated = capture.Allocate(resolution * resolution, lastInputs.shadowLevels > 0);
+            var reallocated = capture.Allocate(performance.Resolution * performance.Resolution, lastInputs.shadowLevels > 0);
 
             capture.Run(source, this, lastInputs.width * toLocal, alphaCutoff
               , lastInputs.shadowSoftness * toLocal, lastInputs.shadowGrowth * toLocal, lastInputs.shadowLevels);
@@ -131,8 +144,8 @@ namespace RiseOn.Outline2D {
             return reallocated;
         }
 
-        // Tuning in the inspector while playing: what needs no new capture shows at once; cutoff, resolution, the
-        // padding, turning the shadow on or off, its softness and, while it shows, the width take a fresh capture, one
+        // Tuning in the inspector while playing: what needs no new capture shows at once; cutoff, resolution, quality,
+        // the padding, turning the shadow on or off, its softness and, while it shows, the width take a fresh capture, one
         // at a time however fast a slider moves.
         protected virtual void OnValidate() {
             if (material == null) return;
@@ -144,6 +157,8 @@ namespace RiseOn.Outline2D {
         private protected void ApplySettings() {
             ApplyRendering();
 
+            capture.Performance = performance;
+
             if (material != null && lastInputs != CaptureInputs) capture.MarkOutdated();
         }
 
@@ -151,25 +166,32 @@ namespace RiseOn.Outline2D {
         // program (measured on a PowerVR phone); done in Awake, it lands in loading instead of on the first selection.
         private protected virtual void Warm() => capture.Warm(material);
 
-        // Puts the outline on a material of the variant with the shadow or without it; true when that took a new material,
-        // which whatever draws the outline must be handed. A new one rather than the keyword flipped on this one: a Mask
-        // keeps its stencil copy for as long as the material under it is the same object. Turning the shadow on warms its
+        // Puts the outline on a material of the variant for its shadow, or for none; true when that took a new material,
+        // which whatever draws the outline must be handed. A new one rather than the keywords flipped on this one: a Mask
+        // keeps its stencil copy for as long as the material under it is the same object. Turning a shadow on warms its
         // variant there and then, as Awake warms the one it starts with.
-        private protected bool ApplyShadowKeyword() {
-            var keyword = new LocalKeyword(material.shader, SHADOW_KEYWORD);
-            var on = BlurLevels > 0;
+        private protected bool ApplyShadowKeywords() {
+            var variant = ShadowVariant;
 
-            if (material.IsKeywordEnabled(keyword) == on) return false;
+            if (material.IsKeywordEnabled(new LocalKeyword(material.shader, DIRECTIONAL_KEYWORD)) == variant is OutlineShadowType.Directional
+             && material.IsKeywordEnabled(new LocalKeyword(material.shader, SPREAD_KEYWORD)) == variant is OutlineShadowType.Spread) {
+                return false;
+            }
 
             var next = new Material(material) { hideFlags = HideFlags.HideAndDontSave };
 
-            next.SetKeyword(keyword, on);
+            SetShadowKeywords(next, variant);
             OutlineMask.SafeDestroy(material);
             material = next;
 
-            if (on) Warm();
+            if (variant != null) Warm();
 
             return true;
+        }
+
+        private static void SetShadowKeywords(Material target, OutlineShadowType? variant) {
+            target.SetKeyword(new LocalKeyword(target.shader, DIRECTIONAL_KEYWORD), variant is OutlineShadowType.Directional);
+            target.SetKeyword(new LocalKeyword(target.shader, SPREAD_KEYWORD), variant is OutlineShadowType.Spread);
         }
 
         protected virtual void Reset() {

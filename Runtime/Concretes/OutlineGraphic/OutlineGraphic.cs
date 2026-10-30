@@ -6,16 +6,16 @@ using UnityEngine.UI;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// Outlines the merged silhouette of a group of Images. The Graphic that draws it is spawned hidden under this<br/>
+    /// Outlines the merged silhouette of a group of Graphics. The Graphic that draws it is spawned hidden under this<br/>
     /// transform when the component wakes, first among its children, so it draws right after this object and takes<br/>
     /// CanvasGroup alpha, Mask and RectMask2D like any Graphic; colour and maskable are set here and handed to it. The<br/>
     /// silhouette is captured in this transform's local space at the end of the canvas update after<br/>
-    /// <see cref="SetTargets"/>, once layout has run and every Image has rebuilt its mesh; the distance transform, and the<br/>
-    /// shadow's blur when it shows, then run on worker threads and the outline shows once they land.
+    /// <see cref="SetTargets"/>, once layout has run and every Graphic has rebuilt its mesh, and again as often as the<br/>
+    /// performance profile says; the outline shows once the field is built.
     /// </summary>
     [HideMonoScript]
-    public class OutlineImage : Outline, IOutlineImage {
-        internal const string OUTLINE_SHADER = "RiseOn/Outline2D/OutlineImage";
+    public class OutlineGraphic : Outline, IOutlineGraphic {
+        internal const string OUTLINE_SHADER = "RiseOn/Outline2D/OutlineGraphic";
 
         private const string CLIP_RECT = "UNITY_UI_CLIP_RECT";
 
@@ -28,10 +28,14 @@ namespace RiseOn.Outline2D {
         [SerializeField, PlainFoldoutGroup("Visual/Outline"), MinValue(0)]
         protected float width = 8;
 
-        // A soft shadow of silhouette and outline together, as if the group were a sticker lifted off the canvas; the
-        // checkbox in the Shadow foldout's header.
+        // A soft shadow of silhouette and outline together, as if the group were a sticker lifted off the canvas, or a glow
+        // spread all around; the checkbox in the Shadow foldout's header.
         [SerializeField, PlainFoldoutGroup("Visual/Shadow", Toggle = nameof(shadowEnabled))]
         protected bool shadowEnabled;
+
+        // Moved one way, or spread all around; the settings of the other kind are hidden.
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Type")]
+        protected OutlineShadowType shadowType;
 
         // Its alpha is scaled by the outline colour's, so fading the outline fades the shadow too.
         [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Color")]
@@ -39,25 +43,30 @@ namespace RiseOn.Outline2D {
 
         // The way the shadow falls along the root canvas's axes, the screen's when the canvas is not rotated, whatever this
         // object's rotation.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Direction")]
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Direction"), ShowIf(nameof(IsDirectional))]
         protected DirectionExt shadowDirection = new(Direction.Down);
 
         // Distance the shadow falls, in units of the root canvas.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Distance"), MinValue(0)]
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Distance"), MinValue(0), ShowIf(nameof(IsDirectional))]
         protected float shadowDistance = 8;
 
         // Distance the shadow's edge fades out over, in units of the root canvas. Baked at capture as one blur level, so
         // changing it takes a new capture.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Softness"), MinValue(0)]
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Softness"), MinValue(0), ShowIf(nameof(IsDirectional))]
         protected float shadowSoftness = 10;
 
-        // Masks and RectMask2D above this object clip the outline like the Images they clip.
+        // Distance a spread shadow reaches past the outline, in units of the root canvas; part of the padding, so changing
+        // it takes a new capture.
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Spread"), MinValue(0), ShowIf(nameof(IsSpread))]
+        protected float shadowSpread = 16;
+
+        // Masks and RectMask2D above this object clip the outline like the Graphics they clip.
         [SerializeField, PlainFoldoutGroup("Visual/Advanced")]
         protected bool maskable = true;
 
-        private readonly ImageSource source = new();
+        private readonly GraphicSource source = new();
 
-        private OutlineGraphic graphic;
+        private OutlineCanvasGraphic graphic;
         private bool visible;
         private bool quadBuilt;
         private float shownRadius;
@@ -104,6 +113,23 @@ namespace RiseOn.Outline2D {
             }
         }
 
+        // Switching between the kinds takes a new capture: only a directional shadow bakes a blur level.
+        public OutlineShadowType ShadowType {
+            get => shadowType;
+            set {
+                shadowType = value;
+                ApplySettings();
+            }
+        }
+
+        public float ShadowSpread {
+            get => shadowSpread;
+            set {
+                shadowSpread = value;
+                ApplySettings();
+            }
+        }
+
         public float ShadowDistance {
             get => shadowDistance;
             set {
@@ -126,16 +152,21 @@ namespace RiseOn.Outline2D {
 
         private protected override string ShaderName => OUTLINE_SHADER;
         private bool HasShadow => shadowEnabled;
+        private bool IsDirectional => shadowType is OutlineShadowType.Directional;
+        private bool IsSpread => shadowType is OutlineShadowType.Spread;
 
-        // The frame pads every side alike, by the ring's width or, while the shadow shows, its reach: the outline it is
-        // grown by, its distance and its softness.
-        private protected override float CaptureWidth => HasShadow ? width + shadowDistance + shadowSoftness : width;
+        // The frame pads every side alike, by the ring's width or, while the shadow shows, its reach: a directional
+        // one's distance and softness past the outline it is grown by, or a spread one's reach.
+        private protected override float CaptureWidth =>
+            !HasShadow ? width : IsSpread ? width + shadowSpread : width + shadowDistance + shadowSoftness;
+
+        private protected override OutlineShadowType? ShadowVariant => HasShadow ? shadowType : null;
 
         // A canvas does not zoom, so one blur level, the silhouette grown by the width and blurred to the softness, is all
-        // the shadow needs.
-        private protected override int BlurLevels => HasShadow ? 1 : 0;
-        private protected override Vector3 BlurSoftness => HasShadow ? Vector3.one * shadowSoftness : Vector3.zero;
-        private protected override Vector3 BlurGrowth => HasShadow ? Vector3.one * width : Vector3.zero;
+        // a directional shadow needs.
+        private protected override int BlurLevels => HasShadow && IsDirectional ? 1 : 0;
+        private protected override Vector3 BlurSoftness => BlurLevels > 0 ? Vector3.one * shadowSoftness : Vector3.zero;
+        private protected override Vector3 BlurGrowth => BlurLevels > 0 ? Vector3.one * width : Vector3.zero;
 
         // Under a RectMask2D the canvas draws the clip variant, which has a GPU program of its own to build.
         private protected override void Warm() {
@@ -162,7 +193,7 @@ namespace RiseOn.Outline2D {
             source.Release();
         }
 
-        public virtual void SetTargets(IEnumerable<Image> targets) {
+        public virtual void SetTargets(IEnumerable<Graphic> targets) {
             source.Set(targets);
             capture.Restart(source.Count > 0);
 
@@ -198,6 +229,13 @@ namespace RiseOn.Outline2D {
                 graphic.canvasRenderer.SetTexture(capture.Texture);
                 visible = false;
             }
+
+            // An immediate capture has landed already. The canvas refuses new dirt this late, but has not batched yet, so
+            // the quad is rebuilt straight away and shows in this frame.
+            if (!capture.TryUpload()) return;
+
+            visible = true;
+            graphic.RebuildGeometry();
         }
 
         // One quad over the field. The ring's radius and the field's size ride in uv0.zw, the shadow's offset, softness
@@ -254,7 +292,7 @@ namespace RiseOn.Outline2D {
             rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = Vector2.zero;
 
-            graphic = rect.gameObject.AddComponent<OutlineGraphic>();
+            graphic = rect.gameObject.AddComponent<OutlineCanvasGraphic>();
             graphic.raycastTarget = false;
             graphic.Bind(this);
         }
@@ -269,7 +307,7 @@ namespace RiseOn.Outline2D {
             // material, for the Graphic to hand on (and a Mask above to copy anew).
             graphic.SetVerticesDirty();
 
-            if (ApplyShadowKeyword()) graphic.SetMaterialDirty();
+            if (ApplyShadowKeywords()) graphic.SetMaterialDirty();
 
             if (graphic.maskable == maskable) return;
 
@@ -279,13 +317,16 @@ namespace RiseOn.Outline2D {
             graphic.RecalculateClipping();
         }
 
-        // The shadow's offset in field texels, its distance along its direction on the root canvas taken into this
-        // transform's space so it falls the same way whatever the rotation, and its softness in field texels; zero while
-        // the shadow is off.
+        // A directional shadow's offset in field texels, its distance along its direction on the root canvas taken into
+        // this transform's space so it falls the same way whatever the rotation, and its softness in field texels; a
+        // spread one's reach past the ring in z, capped so it never runs off the capture; zero while the shadow is off.
         private Vector3 Shadow() {
             if (!HasShadow || graphic.canvas == null) return Vector3.zero;
 
             var texel = capture.Frame.TexelSize;
+
+            if (IsSpread) return new Vector3(0, 0, Mathf.Min(shadowSpread * CanvasToLocal() / texel, Mathf.Max(capture.Frame.MaxRadius - Radius(), 0)));
+
             var root = graphic.canvas.rootCanvas.transform;
             var offset = (Vector2)transform.InverseTransformVector(root.TransformVector(shadowDirection.ToVector2() * shadowDistance));
 

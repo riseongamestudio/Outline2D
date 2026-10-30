@@ -1,9 +1,9 @@
 {
   "name": "com.riseon.outline2d",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "displayName": "Outline 2D",
-  "description": "Outline the merged silhouette of a group of sprites or UI Images, expanded exactly like Select > Modify > Expand, over an optional soft drop shadow, with a fixed texel budget and the distance transform and shadow blur on worker threads",
-  "documentationUrl": "https://github.com/riseongamestudio/Outline2D/blob/v1.1.0/README.md",
+  "description": "Outline the merged silhouette of a group of renderers (sprites, meshes such as Spine skeletons) or UI Graphics, expanded exactly like Select > Modify > Expand, over an optional soft drop shadow, with a fixed texel budget and a performance profile: capture on demand or at an interval, exact on worker threads or fast on the GPU, asynchronous or in the same frame",
+  "documentationUrl": "https://github.com/riseongamestudio/Outline2D/blob/v2.0.0/README.md",
   "author": {
     "name": "RiseOn"
   },

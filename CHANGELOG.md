@@ -4,6 +4,54 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [2.0.0] - 2026-10-30
+
+### Đổi (phá tương thích)
+
+- `OutlineSprite` đổi tên thành `OutlineRenderer`, `IOutlineSprite` thành `IOutlineRenderer`;
+  `SetTargets` nhận `IEnumerable<Renderer>` thay vì `IEnumerable<SpriteRenderer>`. Shader viền đổi
+  tên thành `RiseOn/Outline2D/OutlineRenderer`. GUID của script và shader giữ nguyên nên prefab và
+  scene đã lưu vẫn trỏ đúng; code gọi theo tên cũ phải đổi.
+- `OutlineImage` đổi tên thành `OutlineGraphic`, `IOutlineImage` thành `IOutlineGraphic`;
+  `SetTargets` nhận `IEnumerable<Graphic>` thay vì `IEnumerable<Image>`. Shader viền đổi tên thành
+  `RiseOn/Outline2D/OutlineGraphic`. GUID giữ nguyên như trên.
+- Field `resolution` được thay bằng `performance` (`OutlinePerformanceProfile`), mục gập
+  *Optimizations* thành *Performance*. Giá trị `resolution` đã lưu không được chuyển sang: prefab
+  hay scene có `resolution` khác 256 phải đặt lại `Resolution` trong profile.
+
+### Thêm
+
+- `OutlineRenderer` viền được mọi `Renderer`, không chỉ sprite: renderer khác (như `MeshRenderer`
+  của skeleton Spine) được vẽ vào mask từng submesh với texture chính của material ở submesh đó.
+- `OutlineGraphic` viền được mọi `Graphic` của uGUI, không chỉ `Image`.
+- `OutlinePerformanceProfile` và `IOutline.Performance` (cùng property trên hai component): profile
+  serialize được để bên ngoài giữ sẵn cho từng loại nhóm rồi gán vào. Gồm:
+  - `Resolution` (64–1024, như `resolution` cũ);
+  - `Frequency`: `OnDemand` (chỉ chụp khi đổi nhóm hay setting), `FrameInterval` (chụp lại mỗi
+    `Frames` frame, 1 là mỗi frame), `TimeInterval` (chụp lại mỗi `Seconds` giây thực);
+  - `Quality`: `Exact` (khoảng cách Euclid chính xác và blur Gaussian trên worker thread, như
+    trước) hoặc `Fast` (jump flood trên GPU, không đọc về; bóng tính từ khoảng cách thay vì blur).
+    Máy không render được định dạng field hay định dạng toạ độ seed, hoặc không chép được render
+    target sang texture, thì `Fast` dựng như `Exact`;
+  - `Latency`: `Async` (rải việc qua vài frame, như trước) hoặc `Immediate` (viền hiện trong frame
+    chụp; `Exact` thì main thread chờ đọc về và các job).
+
+  Mọi tổ hợp đều chạy; xem bảng đo trên máy thật trong README của Performance.
+- Bóng kiểu `Spread` (`OutlineShadowType`, `ShadowType` trên hai component và interface): tản đều
+  mọi phía từ mép ngoài viền, đậm nhất sát viền và nhạt dần tới hết khoảng tản (`ShadowSpreadRange`
+  theo zoom với `OutlineRenderer`, `ShadowSpread` theo đơn vị root canvas với `OutlineGraphic`). Vẽ
+  thẳng từ khoảng cách nên không nướng blur nào: field một kênh; `Exact` và `Fast` vẽ cùng một
+  cách, chỉ khác ở sai số khoảng cách của jump flood. `Directional` là bóng đổ một hướng như trước,
+  và là mặc định.
+- Shader nội bộ `Hidden/RiseOn/Outline2D/JumpFlood`, nạp qua `Outline2DResources` như shader mask:
+  URP Global Settings của project có thêm một ô shader trong mục `Outline2DResources`.
+
+### Sửa
+
+- Target đang tắt hay nằm trên GameObject inactive lúc chụp không còn bị vẽ vào silhouette.
+  Trước đây `DrawRenderer` vẫn vẽ nó, nên một nhóm đổi hình bằng cách tắt bớt renderer (như đồ treo
+  lên móc) có viền ôm cả phần đã tắt.
+
 ## [1.2.0] - 2026-10-30
 
 ### Thêm

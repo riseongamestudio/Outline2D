@@ -5,13 +5,13 @@ using UnityEngine.UI;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// Images drawn with the mesh uGUI last handed their CanvasRenderer, so every Image Type, Preserve Aspect and<br/>
-    /// Use Sprite Mesh come out the way the Image draws them, on its own texture.
+    /// Graphics drawn with the mesh uGUI last handed their CanvasRenderer, so an Image's Type, Preserve Aspect and Use<br/>
+    /// Sprite Mesh, a RawImage's UV Rect or a text's glyphs come out the way the Graphic draws them, on its own texture.
     /// </summary>
-    internal sealed class ImageSource : MaskSource<Image> {
+    internal sealed class GraphicSource : MaskSource<Graphic> {
         private static readonly int mainTexId = Shader.PropertyToID("_MainTex");
 
-        // Drawn directly, the CanvasRenderer's mesh leaves the mask empty (measured), so each Image is drawn from a copy;
+        // Drawn directly, the CanvasRenderer's mesh leaves the mask empty (measured), so each Graphic is drawn from a copy;
         // the copies are kept across captures.
         private readonly List<Mesh> copies = new();
         private readonly CombineInstance[] single = new CombineInstance[1];
@@ -31,7 +31,7 @@ namespace RiseOn.Outline2D {
             copies.Clear();
         }
 
-        protected override bool TryGetLocalBounds(Image target, out Bounds bounds) {
+        protected override bool TryGetLocalBounds(Graphic target, out Bounds bounds) {
             var mesh = GetMesh(target);
 
             bounds = mesh != null ? mesh.bounds : default;
@@ -39,12 +39,12 @@ namespace RiseOn.Outline2D {
             return mesh != null;
         }
 
-        protected override void DrawTarget(CommandBuffer cmd, Material material, Image target) {
+        protected override void DrawTarget(CommandBuffer cmd, Material material, Graphic target) {
             var mesh = GetMesh(target);
 
             if (mesh == null) return;
 
-            if (drawn == copies.Count) copies.Add(new Mesh { name = "OutlineImageCopy", hideFlags = HideFlags.HideAndDontSave });
+            if (drawn == copies.Count) copies.Add(new Mesh { name = "OutlineGraphicCopy", hideFlags = HideFlags.HideAndDontSave });
 
             var copy = copies[drawn++];
 
@@ -57,9 +57,9 @@ namespace RiseOn.Outline2D {
             cmd.DrawMesh(copy, target.transform.localToWorldMatrix, material, 0, 0, properties);
         }
 
-        // Null for an Image that draws nothing: disabled, or without geometry yet.
-        private static Mesh GetMesh(Image image) {
-            var mesh = image.isActiveAndEnabled ? image.canvasRenderer.GetMesh() : null;
+        // Null for a Graphic that draws nothing: disabled, or without geometry yet.
+        private static Mesh GetMesh(Graphic graphic) {
+            var mesh = graphic.isActiveAndEnabled ? graphic.canvasRenderer.GetMesh() : null;
 
             return mesh != null && mesh.vertexCount > 0 ? mesh : null;
         }

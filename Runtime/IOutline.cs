@@ -9,5 +9,9 @@ namespace RiseOn.Outline2D {
     public interface IOutline {
         /// <summary>Colour of the outline; its alpha is the outline's opacity. Applies at once, no new capture.</summary>
         Color Color { get; set; }
+
+        /// <summary>What captures cost and when they run. A new resolution or quality takes a new capture; frequency and<br/>
+        /// latency apply from the next one.</summary>
+        OutlinePerformanceProfile Performance { get; set; }
     }
 }

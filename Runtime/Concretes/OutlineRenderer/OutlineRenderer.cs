@@ -5,15 +5,15 @@ using UnityEngine;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// Outlines the merged silhouette of a group of sprites. The SpriteRenderer that draws it is spawned hidden under<br/>
-    /// this transform when the component wakes; colour, sorting and mask interaction are set here and handed to it.<br/>
-    /// The silhouette is captured in this transform's local space in the LateUpdate after <see cref="SetTargets"/>,<br/>
-    /// which runs after constraints have moved it onto the group; the distance transform, and the shadow's blur when it<br/>
-    /// shows, then run on worker threads and the outline shows once they land.
+    /// Outlines the merged silhouette of a group of renderers, sprites or meshes. The SpriteRenderer that draws it is<br/>
+    /// spawned hidden under this transform when the component wakes; colour, sorting and mask interaction are set here<br/>
+    /// and handed to it. The silhouette is captured in this transform's local space in the LateUpdate after<br/>
+    /// <see cref="SetTargets"/>, which runs after constraints have moved it onto the group, and again as often as the<br/>
+    /// performance profile says; the outline shows once the field is built.
     /// </summary>
     [HideMonoScript]
-    public class OutlineSprite : Outline, IOutlineSprite {
-        internal const string OUTLINE_SHADER = "RiseOn/Outline2D/OutlineSprite";
+    public class OutlineRenderer : Outline, IOutlineRenderer {
+        internal const string OUTLINE_SHADER = "RiseOn/Outline2D/OutlineRenderer";
 
         private static readonly int orthoRangeId = Shader.PropertyToID("_OrthoRange");
         private static readonly int widthRangeId = Shader.PropertyToID("_WidthRange");
@@ -26,6 +26,7 @@ namespace RiseOn.Outline2D {
         private static readonly int shadowDistanceRangeId = Shader.PropertyToID("_ShadowDistanceRange");
         private static readonly int shadowSoftnessRangeId = Shader.PropertyToID("_ShadowSoftnessRange");
         private static readonly int shadowLevelsId = Shader.PropertyToID("_ShadowLevels");
+        private static readonly int shadowSpreadRangeId = Shader.PropertyToID("_ShadowSpreadRange");
 
         // Orthographic sizes at which every range below takes its .x and its .y; interpolated between, held outside. One
         // range for the outline and the shadow, so the two keep their proportions at every zoom.
@@ -42,23 +43,32 @@ namespace RiseOn.Outline2D {
         [SerializeField, PlainFoldoutGroup("Visual/Shadow", Toggle = nameof(shadowEnabled))]
         protected bool shadowEnabled;
 
+        // Moved one way, or spread all around; the settings of the other kind are hidden.
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Type")]
+        protected OutlineShadowType shadowType;
+
         // Its alpha is scaled by the outline colour's, so fading the outline fades the shadow too.
         [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Color")]
         protected Color shadowColor = new(0, 0, 0, .5f);
 
         // The way the shadow falls along the world axes, the screen's when the camera is not rotated, whatever the group's
         // rotation or flip.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Direction")]
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Direction"), ShowIf(nameof(IsDirectional))]
         protected DirectionExt shadowDirection = new(Direction.Down);
 
         // World distance the shadow falls at the two ends of orthoRange.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Distance Range")]
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Distance Range"), ShowIf(nameof(IsDirectional))]
         protected Vector2 shadowDistanceRange = new(.12f, .48f);
 
         // World distance the shadow's edge fades out over at the two ends of orthoRange. Baked at capture as three blur
         // levels, at the two ends of orthoRange and one zoom between, so changing it takes a new capture.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Softness Range"), MinValue(0)]
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Softness Range"), MinValue(0), ShowIf(nameof(IsDirectional))]
         protected Vector2 shadowSoftnessRange = new(.12f, .48f);
+
+        // World distance a spread shadow reaches past the outline at the two ends of orthoRange; part of the padding, so
+        // changing it takes a new capture.
+        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Spread Range"), MinValue(0), ShowIf(nameof(IsSpread))]
+        protected Vector2 shadowSpreadRange = new(.15f, .6f);
 
         [SerializeField, PlainFoldoutGroup("Visual/Advanced"), ValueDropdown(nameof(SortingLayers))]
         protected int sortingLayerID;
@@ -70,10 +80,11 @@ namespace RiseOn.Outline2D {
         [SerializeField, PlainFoldoutGroup("Visual/Advanced")]
         protected SpriteMaskInteraction maskInteraction;
 
-        private readonly SpriteSource source = new();
+        private readonly RendererSource source = new();
 
         private SpriteRenderer spriteRenderer;
         private Sprite sprite;
+        private OutlineFrame spriteFrame;
         private bool shown;
 
         // Where between the ends of orthoRange the capture in flight bakes its middle blur level, and in w whether it
@@ -137,6 +148,23 @@ namespace RiseOn.Outline2D {
             }
         }
 
+        // Switching between the kinds takes a new capture: only a directional shadow bakes blur levels.
+        public OutlineShadowType ShadowType {
+            get => shadowType;
+            set {
+                shadowType = value;
+                ApplySettings();
+            }
+        }
+
+        public Vector2 ShadowSpreadRange {
+            get => shadowSpreadRange;
+            set {
+                shadowSpreadRange = value;
+                ApplySettings();
+            }
+        }
+
         public DirectionExt ShadowDirection {
             get => shadowDirection;
             set {
@@ -165,21 +193,27 @@ namespace RiseOn.Outline2D {
         private protected override string ShaderName => OUTLINE_SHADER;
 
         private bool HasShadow => shadowEnabled;
+        private bool IsDirectional => shadowType is OutlineShadowType.Directional;
+        private bool IsSpread => shadowType is OutlineShadowType.Spread;
 
         // The ring's width is picked in the shader for the zoom; the larger end is what a capture must make room for, plus
-        // the shadow's farthest reach while it shows: its distance and its softness, past the outline it is grown by. The
-        // frame pads every side alike, so the shadow's far side costs texels too.
+        // the shadow's farthest reach while it shows: a directional one's distance and softness, past the outline it is
+        // grown by, or a spread one's reach. The frame pads every side alike, so a directional shadow's far side costs
+        // texels too.
         private protected override float CaptureWidth {
             get {
                 var width = Mathf.Max(widthRange.x, widthRange.y);
 
                 if (!HasShadow) return width;
+                if (IsSpread) return width + Mathf.Max(shadowSpreadRange.x, shadowSpreadRange.y);
 
                 return width + Mathf.Max(shadowDistanceRange.x, shadowDistanceRange.y) + Mathf.Max(shadowSoftnessRange.x, shadowSoftnessRange.y);
             }
         }
 
-        private protected override int BlurLevels => HasShadow ? 3 : 0;
+        private protected override OutlineShadowType? ShadowVariant => HasShadow ? shadowType : null;
+
+        private protected override int BlurLevels => HasShadow && IsDirectional ? 3 : 0;
 
         // The three blur levels are three zooms: the two ends of orthoRange and one between, each grown by the outline's
         // width and blurred to the shadow's softness at that zoom, for the shader to blend by zoom. The one between is
@@ -201,11 +235,11 @@ namespace RiseOn.Outline2D {
             }
         }
 
-        private protected override Vector3 BlurSoftness => HasShadow
+        private protected override Vector3 BlurSoftness => BlurLevels > 0
             ? new Vector3(shadowSoftnessRange.x, Mathf.Lerp(shadowSoftnessRange.x, shadowSoftnessRange.y, MiddleZoom), shadowSoftnessRange.y)
             : Vector3.zero;
 
-        private protected override Vector3 BlurGrowth => HasShadow
+        private protected override Vector3 BlurGrowth => BlurLevels > 0
             ? new Vector3(widthRange.x, Mathf.Lerp(widthRange.x, widthRange.y, MiddleZoom), widthRange.y)
             : Vector3.zero;
 
@@ -223,7 +257,7 @@ namespace RiseOn.Outline2D {
             OutlineMask.SafeDestroy(sprite);
         }
 
-        public virtual void SetTargets(IEnumerable<SpriteRenderer> targets) {
+        public virtual void SetTargets(IEnumerable<Renderer> targets) {
             source.Set(targets);
             capture.Restart(source.Count > 0);
 
@@ -233,12 +267,13 @@ namespace RiseOn.Outline2D {
 
         protected virtual void LateUpdate() {
             // A capture in flight is never restarted: an inspector change waits for it to land, then takes the latest values.
+            // An immediate one lands right away, so it shows in this frame.
             if (capture.IsDue) Capture(this);
-            else if (capture.TryUpload()) Show(this);
+            if (capture.TryUpload()) Show(this);
 
             // LateUpdate runs after this frame's constraints, so the transform already sits on the group. A new field
             // texture leaves the shown sprite pointing at the old one, so it hides until the next lands.
-            static void Capture(OutlineSprite context) {
+            static void Capture(OutlineRenderer context) {
                 var worldPerLocal = context.transform.localToWorldMatrix.GetColumn(0).magnitude;
 
                 context.capturedLevels = new Vector4(context.MiddleZoom, 0, 0, context.BlurLevels > 0 ? 1 : 0);
@@ -250,9 +285,25 @@ namespace RiseOn.Outline2D {
             // bilinear sampling never reaches the texels outside this frame. A rect that starts half a texel in costs a
             // few microseconds, where OverrideGeometry for the same corners took about 190 (measured in the Editor).
             // One pixel per texel, and the pivot on this transform's origin so that the sprite's local space is this
-            // transform's; pivot and pixels per unit only exist at creation, so each capture makes its own.
-            static void Show(OutlineSprite context) {
+            // transform's; pivot and pixels per unit only exist at creation, so each capture over a new frame makes its own.
+            static void Show(OutlineRenderer context) {
                 var frame = context.capture.Frame;
+
+                if (context.sprite == null || context.sprite.texture != context.capture.Texture || !frame.Matches(context.spriteFrame)) {
+                    CreateSprite(context, frame);
+                }
+
+                context.material.SetFloat(fieldSizeId, context.capture.Texture.width);
+                context.material.SetFloat(texelSizeId, frame.TexelSize);
+                context.material.SetFloat(maxRadiusId, frame.MaxRadius);
+                context.material.SetVector(frameSizeId, new Vector2(frame.Width, frame.Height));
+                context.material.SetVector(shadowLevelsId, context.capturedLevels);
+
+                context.shown = true;
+                context.spriteRenderer.enabled = true;
+            }
+
+            static void CreateSprite(OutlineRenderer context, in OutlineFrame frame) {
                 var span = new Vector2(frame.Width - 1, frame.Height - 1);
 
                 var sprite = Sprite.Create(
@@ -271,15 +322,7 @@ namespace RiseOn.Outline2D {
                 context.spriteRenderer.sprite = sprite;
                 OutlineMask.SafeDestroy(context.sprite);
                 context.sprite = sprite;
-
-                context.material.SetFloat(fieldSizeId, context.capture.Texture.width);
-                context.material.SetFloat(texelSizeId, frame.TexelSize);
-                context.material.SetFloat(maxRadiusId, frame.MaxRadius);
-                context.material.SetVector(frameSizeId, new Vector2(frame.Width, frame.Height));
-                context.material.SetVector(shadowLevelsId, context.capturedLevels);
-
-                context.shown = true;
-                context.spriteRenderer.enabled = true;
+                context.spriteFrame = frame;
             }
         }
 
@@ -294,7 +337,7 @@ namespace RiseOn.Outline2D {
         private protected override void ApplyRendering() {
             if (spriteRenderer == null) return;
 
-            if (ApplyShadowKeyword()) spriteRenderer.sharedMaterial = material;
+            if (ApplyShadowKeywords()) spriteRenderer.sharedMaterial = material;
 
             material.SetVector(orthoRangeId, orthoRange);
             material.SetVector(widthRangeId, widthRange);
@@ -302,6 +345,7 @@ namespace RiseOn.Outline2D {
             material.SetVector(shadowDirectionId, shadowDirection.ToVector2());
             material.SetVector(shadowDistanceRangeId, shadowDistanceRange);
             material.SetVector(shadowSoftnessRangeId, shadowSoftnessRange);
+            material.SetVector(shadowSpreadRangeId, shadowSpreadRange);
 
             spriteRenderer.color = color;
             spriteRenderer.sortingLayerID = sortingLayerID;

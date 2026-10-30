@@ -3,13 +3,13 @@ using UnityEngine.UI;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// The Graphic an OutlineImage spawns under itself to draw through the canvas. It keeps no state of its own:<br/>
+    /// The Graphic an OutlineGraphic spawns under itself to draw through the canvas. It keeps no state of its own:<br/>
     /// texture, material, geometry and when to capture are the owner's.
     /// </summary>
     [AddComponentMenu("")]
     [RequireComponent(typeof(CanvasRenderer))]
-    internal sealed class OutlineGraphic : MaskableGraphic, ILayoutIgnorer {
-        private OutlineImage owner;
+    internal sealed class OutlineCanvasGraphic : MaskableGraphic, ILayoutIgnorer {
+        private OutlineGraphic owner;
 
         // Never a cell of a LayoutGroup on the outline's object.
         public bool ignoreLayout => true;
@@ -18,10 +18,13 @@ namespace RiseOn.Outline2D {
 
         public override Material defaultMaterial => owner != null && owner.OutlineMaterial != null ? owner.OutlineMaterial : base.defaultMaterial;
 
-        public void Bind(OutlineImage owner) {
+        public void Bind(OutlineGraphic owner) {
             this.owner = owner;
             SetAllDirty();
         }
+
+        /// <summary>Builds the mesh now, for an owner that needs it inside the canvas update, where dirtying is refused.</summary>
+        public void RebuildGeometry() => UpdateGeometry();
 
         public override void GraphicUpdateComplete() {
             base.GraphicUpdateComplete();

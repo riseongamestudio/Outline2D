@@ -1,9 +1,11 @@
-// Draws an OutlineImage's ring from the distance in the field's R as a UI Graphic, over a shadow of silhouette and
-// outline, sharp from the distance in R, soft from the blur baked in G: stencil, RectMask2D clipping, the canvas's vertex
-// colour handling and premultiplied blending follow Unity's UI/Default. The ring's radius and the field's size ride in
-// uv0.zw, the shadow's offset, softness and the frame's size in uv1 (in field texels) and its colour in uv2, so the
-// material changes only when the shadow is turned on or off: the shadow is compiled in only under _SHADOW.
-Shader "RiseOn/Outline2D/OutlineImage"
+// Draws an OutlineGraphic's ring from the distance in the field's R as a UI Graphic, over a shadow: a directional one is
+// the silhouette and outline moved one way, sharp from the distance in R, soft from the blur baked in G; a spread one
+// fades out all around from the ring's outer edge, from R alone. Stencil, RectMask2D clipping, the canvas's vertex colour
+// handling and premultiplied blending follow Unity's UI/Default. The ring's radius and the field's size ride in uv0.zw,
+// the shadow's offset and softness (or its reach) and the frame's size in uv1 (in field texels) and its colour in uv2, so
+// the material changes only when the shadow is turned on, off or to the other kind: each is compiled in only under its
+// keyword, _SHADOW or _SHADOW_SPREAD.
+Shader "RiseOn/Outline2D/OutlineGraphic"
 {
     Properties
     {
@@ -62,7 +64,7 @@ Shader "RiseOn/Outline2D/OutlineImage"
             #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
             // Materials are made at run time, so shader_feature would strip the shadow from builds. Without it this is
             // the ring alone, at the ring's cost.
-            #pragma multi_compile_local _ _SHADOW
+            #pragma multi_compile_local _ _SHADOW _SHADOW_SPREAD
 
             struct appdata_t
             {
@@ -80,7 +82,7 @@ Shader "RiseOn/Outline2D/OutlineImage"
                 fixed4 color : COLOR;
                 float4 texcoord : TEXCOORD0;
                 float4 mask : TEXCOORD1;
-                #ifdef _SHADOW
+                #if defined(_SHADOW) || defined(_SHADOW_SPREAD)
                 float4 shadow : TEXCOORD2;
                 float4 shadowColor : TEXCOORD3;
                 #endif
@@ -109,7 +111,7 @@ Shader "RiseOn/Outline2D/OutlineImage"
                 float4 clampedRect = clamp(_ClipRect, -2e10, 2e10);
                 OUT.mask = float4(v.vertex.xy * 2 - clampedRect.xy - clampedRect.zw, 0.25 / (0.25 * half2(_UIMaskSoftnessX, _UIMaskSoftnessY) + abs(pixelSize.xy)));
                 OUT.texcoord = v.texcoord;
-                #ifdef _SHADOW
+                #if defined(_SHADOW) || defined(_SHADOW_SPREAD)
                 OUT.shadow = v.shadow;
                 OUT.shadowColor = v.shadowColor;
                 #endif
@@ -139,7 +141,16 @@ Shader "RiseOn/Outline2D/OutlineImage"
                 const half invAlphaPrecision = half(1.0 / alphaPrecision);
                 IN.color.a = round(IN.color.a * alphaPrecision) * invAlphaPrecision;
 
-                #ifndef _SHADOW
+                #if defined(_SHADOW_SPREAD)
+                // From the ring's outer edge out to the reach in uv1.z, smooth at both ends; under the ring it is full, so
+                // the ring's anti-aliased edge blends into it with no gap.
+                float spreadShadow = 1 - smoothstep(0, 1, (d - IN.texcoord.z - 0.5) / max(IN.shadow.z, aa));
+
+                float ringA = outer * inner * IN.color.a;
+                float shadowA = spreadShadow * inner * IN.shadowColor.a * IN.color.a * (1 - ringA);
+                float alpha = ringA + shadowA;
+                half4 color = half4(alpha > 0 ? (IN.color.rgb * ringA + IN.shadowColor.rgb * shadowA) / alpha : 0, alpha);
+                #elif !defined(_SHADOW)
                 // A white ring, like an Image's texture, tinted by Graphic.color through the vertex colour as every
                 // Graphic is.
                 half4 ring = half4(1, 1, 1, outer * inner);
