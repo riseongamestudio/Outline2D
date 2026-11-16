@@ -39,15 +39,15 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
 
 ## Cài đặt
 
-**OpenUPM** (khuyên dùng): thêm registry OpenUPM với scope `com.riseon` vào
+**Registry RiseOn** (khuyên dùng): thêm registry RiseOn với scope `com.riseon` vào
 `Packages/manifest.json`, rồi thêm package:
 
 ```json
 {
   "scopedRegistries": [
     {
-      "name": "package.openupm.com",
-      "url": "https://package.openupm.com",
+      "name": "RiseOn",
+      "url": "https://upm.riseongamestudio.com",
       "scopes": ["com.riseon"]
     }
   ],
