@@ -1,4 +1,5 @@
 using System;
+using RiseOn.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -17,16 +18,16 @@ namespace RiseOn.Outline2D {
         [SerializeField, Required, InlineButton(nameof(UseDefaultShader), "Default"), PropertyOrder(-2)]
         private Shader shader;
 
-        [SerializeField, PlainFoldoutGroup("Visual/Outline")]
+        [SerializeField, SectionGroup("Visual/Outline", Foldable = true)]
         protected Color color = Color.darkOrange;
 
         // Target texels with alpha above this belong to the silhouette; the targets' own colour is ignored. The outline
         // and the shadow both follow the silhouette, so it heads the Visual group, above both.
-        [SerializeField, FoldoutGroup("Visual"), PropertyOrder(-1), PropertyRange(0, 1)]
+        [SerializeField, SectionGroup("Visual", Foldable = true), PropertyOrder(-1), PropertyRange(0, 1)]
         protected float alphaCutoff = .5f;
 
         // What captures cost and when they run. Drawn after the groups a subclass declares.
-        [SerializeField, FoldoutGroup("Performance", order: 1), InlineProperty, HideLabel]
+        [SerializeField, SectionGroup("Performance", 1, Foldable = true, Closed = true), InlineProperty, HideLabel]
         protected OutlinePerformanceProfile performance = OutlinePerformanceProfile.Default;
 
         // The outline shaders compile each kind of shadow in only under its keyword, so an outline without one draws at

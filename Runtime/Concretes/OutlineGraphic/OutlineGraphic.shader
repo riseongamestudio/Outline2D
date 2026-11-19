@@ -130,7 +130,8 @@ Shader "RiseOn/Outline2D/OutlineGraphic"
                 // Texels from the nearest silhouette texel centre; the silhouette's own edge is half a texel out.
                 float d = tex2D(_MainTex, IN.texcoord.xy).r;
 
-                // The sprite outline's ring: anti-aliasing width from the UV, inner ramp capped at one texel.
+                // The ring: anti-aliasing width from the UV, inner ramp capped at one texel, its inner edge on the
+                // silhouette's edge.
                 float2 texels = IN.texcoord.xy * IN.texcoord.w;
                 float aa = max(max(length(ddx(texels)), length(ddy(texels))), 1e-4);
                 float outer = saturate((IN.texcoord.z + 0.5 - d) / aa + 0.5);

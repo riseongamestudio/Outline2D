@@ -69,13 +69,14 @@ chụp kế tiếp. Gán các setting này qua property lúc chạy cũng đi đ
 chụp: kéo slider liên tục thì lần đang chạy vẫn chạy xong và hiện ra, lần sau lấy giá trị mới
 nhất, nên viền đổi theo tay kéo mà không chụp dồn mỗi frame.
 
-Inspector có *Shader* (kèm nút *Default*), *Visual* rồi *Performance*. Trong *Visual*, ngưỡng alpha
-đứng đầu vì cả vành lẫn bóng đều theo silhouette (với `OutlineRenderer`, `orthoRange` đứng ngay sau
-vì vành và bóng dùng chung), rồi tới ba mục gập *Outline*, *Shadow* và *Advanced* (sorting và mask).
-Mục gập chỉ có mũi tên và nhãn, không khung, như *Additional Settings* của SpriteRenderer, riêng
-*Shadow* có thêm ô đánh dấu bật bóng giữa mũi tên và nhãn (xem [Editor](../Editor/README.md)); nhãn
-trong mục bỏ tiền tố của mục (*Color*, không phải *Shadow Color*). Inspector vẽ field của lớp cha
-trước, nên *Performance* được đặt thứ tự để luôn đứng cuối, kể cả khi lớp con thêm nhóm.
+Inspector có ô *Shader* (kèm nút *Default*), rồi hai mục *Visual* và *Performance*, mỗi mục là một `[SectionGroup]`
+của `com.riseon.utils`, cùng thanh và khung với trang settings của mọi pack RiseOn. Trong *Visual*,
+ngưỡng alpha đứng đầu vì cả vành lẫn bóng đều theo silhouette (với `OutlineRenderer`, `orthoRange`
+đứng ngay sau vì vành và bóng dùng chung), rồi tới ba mục con *Outline*, *Shadow* và *Advanced*
+(sorting và mask, gập sẵn). *Shadow* có ô tick bật bóng trên thanh: tắt thì mục khoá đóng, tick thì
+mục mở ra. Nhãn trong mục bỏ tiền tố của mục (*Color*, không phải *Shadow Color*). *Performance* gập
+sẵn, và được đặt thứ tự để luôn đứng cuối, kể cả khi lớp con thêm nhóm, vì Inspector vẽ field của lớp
+cha trước.
 
 ## Vành viền
 

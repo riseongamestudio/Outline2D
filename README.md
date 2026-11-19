@@ -26,7 +26,7 @@ Package `com.riseon.outline2d`, namespace `RiseOn.Outline2D`.
 | Phụ thuộc | Cách có | Dùng cho |
 |---|---|---|
 | Unity 6000.3 | | Bản đang dùng để phát triển |
-| `com.riseon.utils` 1.0.12 | Tự cài theo `package.json` | `DirectionExt`, hướng của bóng đổ |
+| `com.riseon.utils` 1.0.15 | Tự cài theo `package.json` | `DirectionExt`, hướng của bóng đổ; `[SectionGroup]`, các mục của inspector |
 | `com.unity.burst` 1.8.29 | Tự cài theo `package.json` | Distance transform và blur của bóng trên worker thread (chất lượng `Exact`) |
 | `com.unity.mathematics` 1.3.3 | Tự cài theo `package.json` | Đổi float sang half trong job |
 | `com.unity.render-pipelines.universal` 17.3.0 | Tự cài theo `package.json` | Shader viền của `OutlineRenderer` (URP), URP Global Settings giữ shader nội bộ |
@@ -52,7 +52,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
     }
   ],
   "dependencies": {
-    "com.riseon.outline2d": "2.0.0"
+    "com.riseon.outline2d": "2.0.1"
   }
 }
 ```
@@ -60,7 +60,7 @@ báo đúng một lỗi từ `RiseOn.Outline2D.Requirements`.
 **Git URL**: *Package Manager → + → Add package from git URL*:
 
 ```
-https://github.com/riseongamestudio/Outline2D.git#v2.0.0
+https://github.com/riseongamestudio/Outline2D.git#v2.0.1
 ```
 
 **Thư mục local**: `"com.riseon.outline2d": "file:D:/path/to/Outline2D"`.
@@ -145,7 +145,7 @@ nó, nhưng các điểm móc của nó là `private protected`, nên ngoài pac
 | Field | Vòng chụp, khung chụp và ngân sách texel, readback, distance transform, jump flood, blur của bóng | [Runtime/Field](Runtime/Field/README.md) |
 | Shader | Shader chụp silhouette và jump flood, cách chúng vào bản build | [Runtime/Shaders](Runtime/Shaders/README.md) |
 | Adapter | Tween màu viền bằng LitMotion, DOTween | [Runtime/Adapters](Runtime/Adapters/README.md) |
-| Editor | Báo thiếu Odin Inspector, vẽ mục gập không khung của Inspector | [Editor](Editor/README.md) |
+| Editor | Báo thiếu Odin Inspector | [Editor](Editor/README.md) |
 
 ## Lịch sử thay đổi
 

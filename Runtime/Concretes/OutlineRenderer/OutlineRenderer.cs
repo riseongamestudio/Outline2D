@@ -30,54 +30,54 @@ namespace RiseOn.Outline2D {
 
         // Orthographic sizes at which every range below takes its .x and its .y; interpolated between, held outside. One
         // range for the outline and the shadow, so the two keep their proportions at every zoom.
-        [SerializeField, FoldoutGroup("Visual"), PropertyOrder(-1)]
+        [SerializeField, SectionGroup("Visual"), PropertyOrder(-1)]
         protected Vector2 orthoRange = new(3, 10);
 
         // World width at the two ends of orthoRange. The larger one is the padding each capture reserves, to which the
         // shadow's reach adds while it shows; the shadow is also grown by the width, so then it takes a new capture.
-        [SerializeField, PlainFoldoutGroup("Visual/Outline")]
+        [SerializeField, SectionGroup("Visual/Outline")]
         protected Vector2 widthRange = new(.05f, .2f);
 
         // A soft shadow of silhouette and outline together, as if the group were a sticker lifted off the scene; the
         // checkbox in the Shadow foldout's header.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow", Toggle = nameof(shadowEnabled))]
+        [SerializeField, SectionGroup("Visual/Shadow", Toggle = nameof(shadowEnabled))]
         protected bool shadowEnabled;
 
         // Moved one way, or spread all around; the settings of the other kind are hidden.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Type")]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Type")]
         protected OutlineShadowType shadowType;
 
         // Its alpha is scaled by the outline colour's, so fading the outline fades the shadow too.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Color")]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Color")]
         protected Color shadowColor = new(0, 0, 0, .5f);
 
         // The way the shadow falls along the world axes, the screen's when the camera is not rotated, whatever the group's
         // rotation or flip.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Direction"), ShowIf(nameof(IsDirectional))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Direction"), ShowIf(nameof(IsDirectional))]
         protected DirectionExt shadowDirection = new(Direction.Down);
 
         // World distance the shadow falls at the two ends of orthoRange.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Distance Range"), ShowIf(nameof(IsDirectional))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Distance Range"), ShowIf(nameof(IsDirectional))]
         protected Vector2 shadowDistanceRange = new(.12f, .48f);
 
         // World distance the shadow's edge fades out over at the two ends of orthoRange. Baked at capture as three blur
         // levels, at the two ends of orthoRange and one zoom between, so changing it takes a new capture.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Softness Range"), MinValue(0), ShowIf(nameof(IsDirectional))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Softness Range"), MinValue(0), ShowIf(nameof(IsDirectional))]
         protected Vector2 shadowSoftnessRange = new(.12f, .48f);
 
         // World distance a spread shadow reaches past the outline at the two ends of orthoRange; part of the padding, so
         // changing it takes a new capture.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Spread Range"), MinValue(0), ShowIf(nameof(IsSpread))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Spread Range"), MinValue(0), ShowIf(nameof(IsSpread))]
         protected Vector2 shadowSpreadRange = new(.15f, .6f);
 
-        [SerializeField, PlainFoldoutGroup("Visual/Advanced"), ValueDropdown(nameof(SortingLayers))]
+        [SerializeField, SectionGroup("Visual/Advanced", Foldable = true, Closed = true), ValueDropdown(nameof(SortingLayers))]
         protected int sortingLayerID;
 
         // Renderers keep the order in 16 bits and wrap anything outside; Unity's own inspector clamps, so this one does too.
-        [SerializeField, PlainFoldoutGroup("Visual/Advanced"), MinValue(short.MinValue), MaxValue(short.MaxValue)]
+        [SerializeField, SectionGroup("Visual/Advanced"), MinValue(short.MinValue), MaxValue(short.MaxValue)]
         protected int sortingOrder;
 
-        [SerializeField, PlainFoldoutGroup("Visual/Advanced")]
+        [SerializeField, SectionGroup("Visual/Advanced")]
         protected SpriteMaskInteraction maskInteraction;
 
         private readonly RendererSource source = new();

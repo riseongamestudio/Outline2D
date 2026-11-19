@@ -4,6 +4,22 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [2.0.1] - 2026-11-19
+
+### Đổi
+
+- Inspector vẽ bằng `[SectionGroup]` của `com.riseon.utils`, cùng thanh và khung với trang settings
+  của mọi pack RiseOn: *Visual* và *Performance* là mục, *Outline*, *Shadow*, *Advanced* là mục con;
+  *Shadow* bật bằng ô tick trên thanh. Bỏ drawer mục gập không khung riêng của package và assembly
+  `RiseOn.Outline2D.Editor`. Cần `com.riseon.utils` 1.0.15.
+
+### Sửa
+
+- `OutlineRenderer` (không gồm `OutlineGraphic`): mép trong của vòng viền dời ra nửa texel, nằm
+  ngoài mép silhouette thay vì đúng trên mép; mép ngoài giữ nguyên, nên vòng hẹp đi nửa texel ở
+  phía trong. Khi zoom sát (nhiều pixel một texel), mép trong trước đây ra bậc thang theo từng texel
+  của mask và lấn vào nét viền đậm của art; giờ mép trong mịn và không thấy khe giữa vòng với art.
+
 ## [2.0.0] - 2026-10-30
 
 ### Đổi (phá tương thích)

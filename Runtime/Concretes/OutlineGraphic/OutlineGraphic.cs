@@ -25,43 +25,43 @@ namespace RiseOn.Outline2D {
 
         // In units of the root canvas, whatever scale sits between it and this transform. Also the padding each capture
         // reserves, to which the shadow's reach adds while it shows; the shadow is also grown by it.
-        [SerializeField, PlainFoldoutGroup("Visual/Outline"), MinValue(0)]
+        [SerializeField, SectionGroup("Visual/Outline"), MinValue(0)]
         protected float width = 8;
 
         // A soft shadow of silhouette and outline together, as if the group were a sticker lifted off the canvas, or a glow
         // spread all around; the checkbox in the Shadow foldout's header.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow", Toggle = nameof(shadowEnabled))]
+        [SerializeField, SectionGroup("Visual/Shadow", Toggle = nameof(shadowEnabled))]
         protected bool shadowEnabled;
 
         // Moved one way, or spread all around; the settings of the other kind are hidden.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Type")]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Type")]
         protected OutlineShadowType shadowType;
 
         // Its alpha is scaled by the outline colour's, so fading the outline fades the shadow too.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Color")]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Color")]
         protected Color shadowColor = new(0, 0, 0, .5f);
 
         // The way the shadow falls along the root canvas's axes, the screen's when the canvas is not rotated, whatever this
         // object's rotation.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Direction"), ShowIf(nameof(IsDirectional))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Direction"), ShowIf(nameof(IsDirectional))]
         protected DirectionExt shadowDirection = new(Direction.Down);
 
         // Distance the shadow falls, in units of the root canvas.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Distance"), MinValue(0), ShowIf(nameof(IsDirectional))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Distance"), MinValue(0), ShowIf(nameof(IsDirectional))]
         protected float shadowDistance = 8;
 
         // Distance the shadow's edge fades out over, in units of the root canvas. Baked at capture as one blur level, so
         // changing it takes a new capture.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Softness"), MinValue(0), ShowIf(nameof(IsDirectional))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Softness"), MinValue(0), ShowIf(nameof(IsDirectional))]
         protected float shadowSoftness = 10;
 
         // Distance a spread shadow reaches past the outline, in units of the root canvas; part of the padding, so changing
         // it takes a new capture.
-        [SerializeField, PlainFoldoutGroup("Visual/Shadow"), LabelText("Spread"), MinValue(0), ShowIf(nameof(IsSpread))]
+        [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Spread"), MinValue(0), ShowIf(nameof(IsSpread))]
         protected float shadowSpread = 16;
 
         // Masks and RectMask2D above this object clip the outline like the Graphics they clip.
-        [SerializeField, PlainFoldoutGroup("Visual/Advanced")]
+        [SerializeField, SectionGroup("Visual/Advanced", Foldable = true, Closed = true)]
         protected bool maskable = true;
 
         private readonly GraphicSource source = new();

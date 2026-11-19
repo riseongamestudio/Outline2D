@@ -170,7 +170,11 @@ Shader "RiseOn/Outline2D/OutlineRenderer"
 
                 // Inside the silhouette the field is 0 everywhere, so the inner ramp stops at one texel: as wide as a
                 // pixel, it would tint the whole silhouette once a pixel covers more than a texel (zoomed out).
-                float inner = saturate((d - 0.5) / min(aa, 1) + 0.5);
+                // It sits a texel out, not on the silhouette's edge at half a texel: the mask is binary, so the d = 0.5
+                // contour steps from texel to texel, and zoomed in (several pixels a texel) the ring drawn over the art
+                // shows those steps and bites into its dark rim. One texel out the Euclidean contour is already smooth
+                // and lies past the art's anti-aliased edge, with no gap that shows.
+                float inner = saturate((d - 1.0) / min(aa, 1) + 0.5);
 
                 #if defined(_SHADOW_SPREAD)
                 // From the ring's outer edge out to the reach, smooth at both ends; under the ring it is full, so the ring's

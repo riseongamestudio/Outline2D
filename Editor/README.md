@@ -2,19 +2,8 @@
 
 [← RiseOn.Outline2D](../README.md)
 
-Hai assembly chỉ có trong Editor.
-
-## Inspector
-
-Assembly `RiseOn.Outline2D.Editor`, phụ thuộc Odin Inspector. `PlainFoldoutGroupDrawer` vẽ
-`PlainFoldoutGroupAttribute` (ở `Runtime/Inspector`): một mục gập chỉ có mũi tên và nhãn, các field
-thụt vào dưới nó, không khung, như *Additional Settings* trong Inspector của SpriteRenderer.
-`FoldoutGroup` của Odin luôn vẽ khung và không có tuỳ chọn bỏ khung, nên package có drawer riêng.
-Mục gập đóng cho tới khi mở; trạng thái mở được Odin nhớ theo từng người dùng. Nhóm có `Toggle`
-thì ô đánh dấu nằm giữa mũi tên và nhãn: tắt thì mục thu lại và mũi tên bị khoá, bật thì mục tự
-mở. Giá trị ghi qua value entry của Odin nên áp cho mọi object đang chọn và có undo.
-
-Attribute là `internal`; assembly Runtime cho assembly này thấy nó qua `InternalsVisibleTo`.
+Một assembly chỉ có trong Editor. Inspector của component vẽ bằng `[SectionGroup]` của
+`com.riseon.utils`, nên package không có drawer riêng.
 
 ## Requirements
 
