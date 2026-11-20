@@ -1,11 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// The targets of the latest SetTargets, null ones dropped. Each is read again at capture time, so a target<br/>
-    /// changed in between is captured as it is then; the concrete source says what one target draws.
+    /// The targets of the latest SetTargets, null ones dropped.<br/>
+    /// Each is read again at capture time, so a target changed in between is captured as it is then; the concrete source says what one target draws.
     /// </summary>
     internal abstract class MaskSource<TTarget> : IMaskSource where TTarget : Component {
         private readonly List<TTarget> targets = new();

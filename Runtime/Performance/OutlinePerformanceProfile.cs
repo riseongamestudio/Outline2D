@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using Sirenix.OdinInspector;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// What an outline spends on its captures and when. Every combination works; they differ only in what they cost and
-    /// how soon a change shows. Serialize one per kind of group and hand it to <see cref="IOutline.Performance"/>.
+    /// What an outline spends on its captures and when.<br/>
+    /// Every combination works; they differ only in what they cost and how soon a change shows.<br/>
+    /// Serialize one per kind of group and hand it to <see cref="IOutline.Performance"/>.
     /// </summary>
     [Serializable]
     public struct OutlinePerformanceProfile {

@@ -1,10 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// The Graphic an OutlineGraphic spawns under itself to draw through the canvas. It keeps no state of its own:<br/>
-    /// texture, material, geometry and when to capture are the owner's.
+    /// The Graphic an OutlineGraphic spawns under itself to draw through the canvas.<br/>
+    /// It keeps no state of its own: texture, material, geometry and when to capture are the owner's.
     /// </summary>
     [AddComponentMenu("")]
     [RequireComponent(typeof(CanvasRenderer))]
@@ -24,7 +24,9 @@ namespace RiseOn.Outline2D {
         }
 
         /// <summary>Builds the mesh now, for an owner that needs it inside the canvas update, where dirtying is refused.</summary>
-        public void RebuildGeometry() => UpdateGeometry();
+        public void RebuildGeometry() {
+            UpdateGeometry();
+        }
 
         public override void GraphicUpdateComplete() {
             base.GraphicUpdateComplete();

@@ -1,4 +1,4 @@
-using Unity.Collections;
+﻿using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -6,9 +6,8 @@ using Object = UnityEngine.Object;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// The GPU half: draws the targets' silhouettes into the bottom-left corner of a square single-channel<br/>
-    /// target, one draw each, then reads that corner back. The target is allocated once at the largest<br/>
-    /// size a frame can take, so a capture never allocates GPU memory.
+    /// The GPU half: draws the targets' silhouettes into the bottom-left corner of a square single-channel target, one draw each, then reads that corner back.<br/>
+    /// The target is allocated once at the largest size a frame can take, so a capture never allocates GPU memory.
     /// </summary>
     internal sealed class OutlineMask {
         private static readonly int cutoffId = Shader.PropertyToID("_Cutoff");
@@ -55,8 +54,7 @@ namespace RiseOn.Outline2D {
         public RenderTexture Texture => texture;
 
         /// <summary>
-        /// Captures the source into frame.Width x frame.Height texels and hands the bytes to onData; when immediate, or<br/>
-        /// without asynchronous readback, before returning, at the cost of a stall.
+        /// Captures the source into frame.Width x frame.Height texels and hands the bytes to onData; when immediate, or without asynchronous readback, before returning, at the cost of a stall.
         /// </summary>
         public void Capture(IMaskSource source, Matrix4x4 worldToLocal, in OutlineFrame frame, float cutoff, bool immediate, DataHandler onData) {
             cmd.Clear();
@@ -102,8 +100,7 @@ namespace RiseOn.Outline2D {
         }
 
         /// <summary>
-        /// Draws once with the mask shader and with each outline material and reads a texel back, so the GPU programs<br/>
-        /// and the readback path exist before the first capture needs them.
+        /// Draws once with the mask shader and with each outline material and reads a texel back, so the GPU programs and the readback path exist before the first capture needs them.
         /// </summary>
         public void Warm(params Material[] outlines) {
             // A degenerate triangle: enough to build each program, with nothing rasterised.

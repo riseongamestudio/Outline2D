@@ -21,16 +21,16 @@ Những điều dưới đây không suy ra được từ việc đọc từng f
 ## Con ẩn vẽ viền
 
 - `Awake` sinh một GameObject con tên `Outline` với `HideAndDontSave`: không hiện trên
-  Hierarchy, không lưu vào scene hay prefab, không sửa được trên Inspector. Nó nằm đúng gốc toạ
+  Hierarchy, không lưu vào scene hay prefab, không sửa được trên Inspector. Nó nằm đúng gốc tọa
   độ của component nên dùng chung không gian local, và theo transform như mọi con.
 - Con lấy layer của GameObject lúc sinh; đổi layer sau đó thì con không đổi theo.
 - Mọi setting của thứ vẽ viền đặt trên component rồi được đẩy xuống con (màu ngay khi gán
   `Color`, phần còn lại ngay khi gán property hoặc chỉnh trên Inspector). Code bên ngoài không
   nên tìm tới con: nó là chi tiết cài đặt và có thể đổi.
 - `Instantiate` một viền đã `Awake` thì Unity chép cả con ẩn (đã đo). Bản chép vẫn trỏ vào
-  field của viền gốc, nên `Awake` của viền mới tắt và huỷ nó trước khi sinh con của mình.
-- Tắt component thì con thôi vẽ; huỷ component thì con, material, texture và sprite (nếu có)
-  bị huỷ theo. Đã đo: thoát Play mode không để sót object nào.
+  field của viền gốc, nên `Awake` của viền mới tắt và hủy nó trước khi sinh con của mình.
+- Tắt component thì con thôi vẽ; hủy component thì con, material, texture và sprite (nếu có)
+  bị hủy theo. Đã đo: thoát Play mode không để sót object nào.
 
 ## Làm sẵn trong Awake
 
@@ -73,7 +73,7 @@ Inspector có ô *Shader* (kèm nút *Default*), rồi hai mục *Visual* và *P
 của `com.riseon.utils`, cùng thanh và khung với trang settings của mọi pack RiseOn. Trong *Visual*,
 ngưỡng alpha đứng đầu vì cả vành lẫn bóng đều theo silhouette (với `OutlineRenderer`, `orthoRange`
 đứng ngay sau vì vành và bóng dùng chung), rồi tới ba mục con *Outline*, *Shadow* và *Advanced*
-(sorting và mask, gập sẵn). *Shadow* có ô tick bật bóng trên thanh: tắt thì mục khoá đóng, tick thì
+(sorting và mask, gập sẵn). *Shadow* có ô tick bật bóng trên thanh: tắt thì mục khóa đóng, tick thì
 mục mở ra. Nhãn trong mục bỏ tiền tố của mục (*Color*, không phải *Shadow Color*). *Performance* gập
 sẵn, và được đặt thứ tự để luôn đứng cuối, kể cả khi lớp con thêm nhóm, vì Inspector vẽ field của lớp
 cha trước.
@@ -143,7 +143,7 @@ chính các target. Quad vì thế vẫn vẽ đè lên target được, và bó
 
 Bóng `Spread` bắt đầu ở mép ngoài của vành, đậm nhất ở đó, rồi nhạt dần đều mọi phía tới hết
 khoảng tản, theo đường `1 − smoothstep` nên mềm ở cả hai đầu. Dưới vành nó đậm hết mức, nên mép
-khử răng cưa của vành hoà vào bóng không hở. Nó không dịch và không có hướng.
+khử răng cưa của vành hòa vào bóng không hở. Nó không dịch và không có hướng.
 
 - Bóng tính thẳng từ khoảng cách trong R ngay tại điểm vẽ, không blur gì: field chỉ một kênh như
   khi không có bóng, `Exact` không chạy job blur, shader không đọc texture thêm lần nào. Hai chất

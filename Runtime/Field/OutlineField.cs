@@ -1,4 +1,4 @@
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -8,23 +8,22 @@ using UnityEngine.Experimental.Rendering;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// The CPU half: turns a read-back mask into an exact Euclidean distance field on worker threads and uploads<br/>
-    /// it as a half-float texture, in texels from the nearest silhouette texel. Sized for a shadow, it then also bakes<br/>
-    /// up to three Gaussian blurs of the silhouette, each grown first by its own distance read off that field, into G, B<br/>
-    /// and A. Sized once like the mask; each frame fills only its bottom-left corner.
+    /// The CPU half: turns a read-back mask into an exact Euclidean distance field on worker threads and uploads it as a half-float texture, in texels from the nearest silhouette texel.<br/>
+    /// Sized for a shadow, it then also bakes up to three Gaussian blurs of the silhouette, each grown first by its own distance read off that field, into G, B and A.<br/>
+    /// Sized once like the mask; each frame fills only its bottom-left corner.
     /// </summary>
     internal sealed class OutlineField {
         // Squared distance of a row that holds no silhouette texel at all.
-        private const int NONE = int.MaxValue;
+        private const int None = int.MaxValue;
 
         // Farther than any texel can be along a row, so a side without silhouette needs no special case.
-        private const int FAR = 1 << 16;
+        private const int Far = 1 << 16;
 
         // Written down a column without any silhouette texel: farther than any distance inside the largest frame.
-        private const float BEYOND = 4096;
+        private const float Beyond = 4096;
 
         // Most blur levels a field holds, one in each of G, B and A.
-        private const int MAX_LEVELS = 3;
+        private const int MaxLevels = 3;
 
         private static readonly ProfilerMarker uploadMarker = new("Outline2D.Upload");
 
@@ -68,13 +67,11 @@ namespace RiseOn.Outline2D {
             texture.SetPixelData(field, 0);
             texture.Apply(false, false);
 
-            if (shadow) blur = new NativeArray<float>(MAX_LEVELS * blurSize * blurSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            if (shadow) blur = new NativeArray<float>(MaxLevels * blurSize * blurSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
 
         /// <summary>
-        /// Starts the transform of a freshly read mask and, when the field holds a shadow, the blur of up to three levels,<br/>
-        /// each the silhouette grown by a distance then blurred at a standard deviation, both in field texels; a previous<br/>
-        /// run still going is finished first.
+        /// Starts the transform of a freshly read mask and, when the field holds a shadow, the blur of up to three levels, each the silhouette grown by a distance then blurred at a standard deviation, both in field texels; a previous run still going is finished first.
         /// </summary>
         public void Schedule(NativeArray<byte> data, int rowBytes, int pixelBytes, in OutlineFrame frame, Vector3 sigmas, Vector3 growths, int levels) {
             handle.Complete();
@@ -158,17 +155,17 @@ namespace RiseOn.Outline2D {
         // Three box passes whose variances add up to sigma², the widths picked as in "Fast almost-Gaussian filtering"
         // (Kutskir): each pass is a running sum, so a level costs the same however soft it is. As radii.
         private static int3 BoxRadii(float sigma) {
-            const int PASSES = 3;
+            const int Passes = 3;
 
             if (sigma < .5f) return int3.zero;
 
-            var ideal = math.sqrt(12 * sigma * sigma / PASSES + 1);
+            var ideal = math.sqrt(12 * sigma * sigma / Passes + 1);
             var lower = (int)math.floor(ideal);
 
             if (lower % 2 == 0) --lower;
 
             var upper = lower + 2;
-            var below = (int)math.round((12 * sigma * sigma - PASSES * lower * lower - 4 * PASSES * lower - 3 * PASSES) / (-4f * lower - 4));
+            var below = (int)math.round((12 * sigma * sigma - Passes * lower * lower - 4 * Passes * lower - 3 * Passes) / (-4f * lower - 4));
 
             return new int3(0 < below ? lower : upper, 1 < below ? lower : upper, 2 < below ? lower : upper) / 2;
         }
@@ -218,7 +215,7 @@ namespace RiseOn.Outline2D {
                 var src = y * rowBytes;
                 var dst = y * width;
 
-                var last = -FAR;
+                var last = -Far;
 
                 for (var x = 0; x < width; ++x) {
                     if (mask[src + x * pixelBytes] >= 128) last = x;
@@ -226,14 +223,14 @@ namespace RiseOn.Outline2D {
                     rows[dst + x] = x - last;
                 }
 
-                var next = width + FAR;
+                var next = width + Far;
 
                 for (var x = width - 1; x >= 0; --x) {
                     if (mask[src + x * pixelBytes] >= 128) next = x;
 
                     var d = math.min(rows[dst + x], next - x);
 
-                    rows[dst + x] = d >= FAR ? NONE : d * d;
+                    rows[dst + x] = d >= Far ? None : d * d;
                 }
             }
         }
@@ -257,7 +254,7 @@ namespace RiseOn.Outline2D {
                 for (var q = 0; q < height; ++q) {
                     var fq = rows[q * width + x];
 
-                    if (fq == NONE) continue;
+                    if (fq is None) continue;
 
                     if (k < 0) {
                         k = 0;
@@ -285,7 +282,7 @@ namespace RiseOn.Outline2D {
                     z[k + 1] = float.PositiveInfinity;
                 }
 
-                var beyond = (ushort)math.f32tof16(BEYOND);
+                var beyond = (ushort)math.f32tof16(Beyond);
 
                 if (k < 0) {
                     for (var q = 0; q < height; ++q) field[(q * fieldWidth + x) * channels] = beyond;
@@ -324,7 +321,7 @@ namespace RiseOn.Outline2D {
             public float3 growths;
 
             public void Execute(int y) {
-                var lines = new NativeArray<float>(MAX_LEVELS * width, Allocator.Temp);
+                var lines = new NativeArray<float>(MaxLevels * width, Allocator.Temp);
                 var spare = new NativeArray<float>(width, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
                 // The silhouette's own edge is half a texel out, so grown by g its edge is at g + 0.5; one more for the
@@ -406,7 +403,7 @@ namespace RiseOn.Outline2D {
             public int levels;
 
             public void Execute(int y) {
-                // A full texel's centre in half resolution texels, clamped so the edge texels hold.
+                // A full texel's center in half resolution texels, clamped so the edge texels hold.
                 var sy = math.clamp((y + .5f) / 2 - .5f, 0, height - 1);
                 var y0 = (int)sy;
                 var y1 = math.min(y0 + 1, height - 1);
@@ -419,7 +416,7 @@ namespace RiseOn.Outline2D {
                     var tx = sx - x0;
                     var texel = (y * fieldWidth + x) * 4;
 
-                    for (var level = 0; level < MAX_LEVELS; ++level) {
+                    for (var level = 0; level < MaxLevels; ++level) {
                         var value = 0f;
 
                         if (level < levels) {

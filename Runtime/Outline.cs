@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using RiseOn.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -6,13 +6,11 @@ using UnityEngine.Rendering;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// What <see cref="OutlineRenderer"/> and <see cref="OutlineGraphic"/> share: the settings every capture reads, the<br/>
-    /// outline material, the capture, and the hidden child each spawns when it wakes to draw through. When to capture,<br/>
-    /// how to show the field and what the child holds are the subclass's; only the outlines in this package derive<br/>
-    /// from here.
+    /// What <see cref="OutlineRenderer"/> and <see cref="OutlineGraphic"/> share: the settings every capture reads, the outline material, the capture, and the hidden child each spawns when it wakes to draw through.<br/>
+    /// When to capture, how to show the field and what the child holds are the subclass's; only the outlines in this package derive from here.
     /// </summary>
     public abstract class Outline : MonoBehaviour, IOutline {
-        private const string CHILD = "Outline";
+        private const string ChildName = "Outline";
 
         // Ahead of Visual, whose order is its first members' -1.
         [SerializeField, Required, InlineButton(nameof(UseDefaultShader), "Default"), PropertyOrder(-2)]
@@ -21,7 +19,7 @@ namespace RiseOn.Outline2D {
         [SerializeField, SectionGroup("Visual/Outline", Foldable = true)]
         protected Color color = Color.darkOrange;
 
-        // Target texels with alpha above this belong to the silhouette; the targets' own colour is ignored. The outline
+        // Target texels with alpha above this belong to the silhouette; the targets' own color is ignored. The outline
         // and the shadow both follow the silhouette, so it heads the Visual group, above both.
         [SerializeField, SectionGroup("Visual", Foldable = true), PropertyOrder(-1), PropertyRange(0, 1)]
         protected float alphaCutoff = .5f;
@@ -32,8 +30,8 @@ namespace RiseOn.Outline2D {
 
         // The outline shaders compile each kind of shadow in only under its keyword, so an outline without one draws at
         // the cost of the ring alone.
-        private const string DIRECTIONAL_KEYWORD = "_SHADOW";
-        private const string SPREAD_KEYWORD = "_SHADOW_SPREAD";
+        private const string DirectionalKeyword = "_SHADOW";
+        private const string SpreadKeyword = "_SHADOW_SPREAD";
 
         private protected readonly OutlineCapture capture = new();
 
@@ -115,13 +113,13 @@ namespace RiseOn.Outline2D {
             foreach (Transform existing in transform) {
                 var copy = existing.gameObject;
 
-                if (copy.hideFlags != HideFlags.HideAndDontSave || copy.name != CHILD) continue;
+                if (copy.hideFlags is not HideFlags.HideAndDontSave || copy.name is not ChildName) continue;
 
                 copy.SetActive(false);
                 OutlineMask.SafeDestroy(copy);
             }
 
-            child = new GameObject(CHILD, component) {
+            child = new GameObject(ChildName, component) {
                 hideFlags = HideFlags.HideAndDontSave
               , layer = gameObject.layer
             };
@@ -165,7 +163,9 @@ namespace RiseOn.Outline2D {
 
         // On GLES the first draw with each shader holds the main thread about 6 ms while the render thread builds its
         // program (measured on a PowerVR phone); done in Awake, it lands in loading instead of on the first selection.
-        private protected virtual void Warm() => capture.Warm(material);
+        private protected virtual void Warm() {
+            capture.Warm(material);
+        }
 
         // Puts the outline on a material of the variant for its shadow, or for none; true when that took a new material,
         // which whatever draws the outline must be handed. A new one rather than the keywords flipped on this one: a Mask
@@ -174,8 +174,8 @@ namespace RiseOn.Outline2D {
         private protected bool ApplyShadowKeywords() {
             var variant = ShadowVariant;
 
-            if (material.IsKeywordEnabled(new LocalKeyword(material.shader, DIRECTIONAL_KEYWORD)) == variant is OutlineShadowType.Directional
-             && material.IsKeywordEnabled(new LocalKeyword(material.shader, SPREAD_KEYWORD)) == variant is OutlineShadowType.Spread) {
+            if (material.IsKeywordEnabled(new LocalKeyword(material.shader, DirectionalKeyword)) == variant is OutlineShadowType.Directional
+             && material.IsKeywordEnabled(new LocalKeyword(material.shader, SpreadKeyword)) == variant is OutlineShadowType.Spread) {
                 return false;
             }
 
@@ -191,8 +191,8 @@ namespace RiseOn.Outline2D {
         }
 
         private static void SetShadowKeywords(Material target, OutlineShadowType? variant) {
-            target.SetKeyword(new LocalKeyword(target.shader, DIRECTIONAL_KEYWORD), variant is OutlineShadowType.Directional);
-            target.SetKeyword(new LocalKeyword(target.shader, SPREAD_KEYWORD), variant is OutlineShadowType.Spread);
+            target.SetKeyword(new LocalKeyword(target.shader, DirectionalKeyword), variant is OutlineShadowType.Directional);
+            target.SetKeyword(new LocalKeyword(target.shader, SpreadKeyword), variant is OutlineShadowType.Spread);
         }
 
         protected virtual void Reset() {

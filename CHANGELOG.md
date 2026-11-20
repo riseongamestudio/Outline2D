@@ -4,6 +4,14 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
 [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [2.0.2] - 2026-11-20
+
+### Đổi
+
+- Cần Unity 6000.3, bản đang dùng để phát triển: `package.json` ghi `unity`, nên Package
+  Manager không cài pack vào project Unity cũ hơn.
+- Phụ thuộc RiseOn lên bản phát hành cùng đợt: `com.riseon.utils` 1.0.18.
+
 ## [2.0.1] - 2026-11-19
 
 ### Đổi
@@ -47,7 +55,7 @@ Mọi thay đổi đáng kể của `com.riseon.outline2d` được ghi ở đâ
     `Frames` frame, 1 là mỗi frame), `TimeInterval` (chụp lại mỗi `Seconds` giây thực);
   - `Quality`: `Exact` (khoảng cách Euclid chính xác và blur Gaussian trên worker thread, như
     trước) hoặc `Fast` (jump flood trên GPU, không đọc về; bóng tính từ khoảng cách thay vì blur).
-    Máy không render được định dạng field hay định dạng toạ độ seed, hoặc không chép được render
+    Máy không render được định dạng field hay định dạng tọa độ seed, hoặc không chép được render
     target sang texture, thì `Fast` dựng như `Exact`;
   - `Latency`: `Async` (rải việc qua vài frame, như trước) hoặc `Immediate` (viền hiện trong frame
     chụp; `Exact` thì main thread chờ đọc về và các job).

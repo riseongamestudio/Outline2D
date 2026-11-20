@@ -46,10 +46,10 @@ Mask và field được cấp phát một lần, vuông, cạnh `2·Resolution`;
 dưới trái rộng × cao. Chỉ đổi `Resolution`, bật hay tắt bóng `Directional`, hoặc đổi kiểu bóng mới
 cấp phát lại, ngay trước lần chụp kế tiếp. Ba render target của `Fast` (cùng cạnh) được cấp phát
 cùng mask và field nếu profile đã là `Fast`, còn không thì ở lần chụp `Fast` đầu tiên; sau đó chúng
-được giữ tới khi cấp phát lại hay huỷ component, kể cả khi profile quay về `Exact`, nên một
+được giữ tới khi cấp phát lại hay hủy component, kể cả khi profile quay về `Exact`, nên một
 highlighter đổi qua lại giữa hai profile chỉ cấp phát chúng một lần. Ngoài các trường hợp trên,
 chọn nhóm không cấp phát bộ nhớ GPU. Ở `Resolution` 256 (cạnh 512) chúng tốn thêm 6 MB GPU khi có
-bóng `Directional`, 4.5 MB khi không: hai target `R32G32_SFloat` cho toạ độ seed, 2 MB mỗi cái, và
+bóng `Directional`, 4.5 MB khi không: hai target `R32G32_SFloat` cho tọa độ seed, 2 MB mỗi cái, và
 một target cùng định dạng field.
 
 ## Nguồn vẽ
@@ -104,11 +104,11 @@ các job (`Immediate`).
 `OutlineJumpFlood` dựng field từ mask bằng jump flooding, toàn bộ bằng fragment shader nên chạy cả
 trên OpenGL ES 3.0, không cần compute shader:
 
-- **Seed.** Mỗi texel silhouette của mask ghi toạ độ của chính nó, texel khác ghi "không có" (một
-  toạ độ rất xa), vào target `R32G32_SFloat`, hoặc `R16G16_SFloat` nếu máy không render được float
-  (half vẫn giữ đúng toạ độ nguyên tới 2048).
+- **Seed.** Mỗi texel silhouette của mask ghi tọa độ của chính nó, texel khác ghi "không có" (một
+  tọa độ rất xa), vào target `R32G32_SFloat`, hoặc `R16G16_SFloat` nếu máy không render được float
+  (half vẫn giữ đúng tọa độ nguyên tới 2048).
 - **Jump.** Mỗi bước, mỗi texel nhìn chính nó và tám texel cách nó một bước, giữ seed gần nhất mà
-  chúng trỏ tới. Bước bắt đầu từ luỹ thừa của 2 ngay dưới cạnh lớn của khung, chia đôi tới 1, rồi
+  chúng trỏ tới. Bước bắt đầu từ lũy thừa của 2 ngay dưới cạnh lớn của khung, chia đôi tới 1, rồi
   thêm một bước 1 nữa (JFA+1) để sửa những texel mà các bước chia đôi bỏ sót. Khung 512 cạnh là 10
   bước. Hai target thay phiên đọc và ghi.
 - **Resolve.** Khoảng cách từ texel tới seed của nó vào R, cùng đơn vị texel như `Exact`. So với
@@ -163,7 +163,7 @@ từ khoảng cách trong R với mép mềm một texel, rồi blur Gaussian. K
 
 ## Đo trên máy thật
 
-OPPO CPH2121 (Helio P90, PowerVR GM9446, OpenGL ES 3), Development Build, game khoá
+OPPO CPH2121 (Helio P90, PowerVR GM9446, OpenGL ES 3), Development Build, game khóa
 30 fps, đang quay màn hình để máy chậm thêm. Unity chỉ cấp 2 job worker trên 8 nhân. Mỗi lần
 chọn một nhóm sprite cỡ cái áo (khoảng 3.5 × 3 world) bằng `OutlineRenderer`, chất lượng `Exact`,
 độ trễ `Async`:

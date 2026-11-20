@@ -1,12 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// Graphics drawn with the mesh uGUI last handed their CanvasRenderer, so an Image's Type, Preserve Aspect and Use<br/>
-    /// Sprite Mesh, a RawImage's UV Rect or a text's glyphs come out the way the Graphic draws them, on its own texture.
+    /// Graphics drawn with the mesh uGUI last handed their CanvasRenderer, so an Image's Type, Preserve Aspect and Use Sprite Mesh, a RawImage's UV Rect or a text's glyphs come out the way the Graphic draws them, on its own texture.
     /// </summary>
     internal sealed class GraphicSource : MaskSource<Graphic> {
         private static readonly int mainTexId = Shader.PropertyToID("_MainTex");

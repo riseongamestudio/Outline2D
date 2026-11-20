@@ -119,7 +119,7 @@ Shader "Hidden/RiseOn/Outline2D/JumpFlood"
             #pragma fragment frag
 
             // The coverage a level leaves at distance d: the silhouette's edge sits half a texel out from its texels'
-            // centres, grown by g, then blurred at standard deviation sigma, which across a straight edge is the normal
+            // centers, grown by g, then blurred at standard deviation sigma, which across a straight edge is the normal
             // CDF, here its logistic fit 1 / (1 + exp(-1.702 x)). Unblurred, the one-texel ramp of the exact build.
             float Coverage (float d, float g, float sigma)
             {

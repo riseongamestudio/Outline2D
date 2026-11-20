@@ -1,24 +1,22 @@
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// One outline's captures, whatever it outlines: fit a frame over the source, draw its mask, and turn that into a<br/>
-    /// distance field, with the shadow's blur levels when asked, as <see cref="Performance"/> says: read back and built<br/>
-    /// on worker threads, or jump flooded on the GPU. One capture runs at a time; new targets drop the one in flight,<br/>
-    /// new settings and the next interval wait for it to land.
+    /// One outline's captures, whatever it outlines: fit a frame over the source, draw its mask, and turn that into a distance field, with the shadow's blur levels when asked, as <see cref="Performance"/> says: read back and built on worker threads, or jump flooded on the GPU.<br/>
+    /// One capture runs at a time; new targets drop the one in flight, new settings and the next interval wait for it to land.
     /// </summary>
     internal sealed class OutlineCapture {
         // Below this a capture holds too few texels to outline anything.
-        private const int MIN_BUDGET = 1024;
+        private const int MinBudget = 1024;
 
         // Above this, squared distances stop being exact in float inside the distance transform.
-        private const int MAX_SIZE = 2048;
+        private const int MaxSize = 2048;
 
         // Frames an asynchronous Fast build spreads its steps over.
-        private const int FLOOD_FRAMES = 3;
+        private const int FloodFrames = 3;
 
         private static readonly ProfilerMarker captureMarker = new("Outline2D.Capture");
         private static readonly ProfilerMarker floodMarker = new("Outline2D.Flood");
@@ -34,7 +32,7 @@ namespace RiseOn.Outline2D {
         private OutlineFrame pending;
         private Stage stage;
         private int version;
-        private int budget = MIN_BUDGET;
+        private int budget = MinBudget;
         private bool outdated;
         private bool hasTargets;
         private int startFrame;
@@ -67,8 +65,8 @@ namespace RiseOn.Outline2D {
         public Texture2D Texture => field?.Texture;
 
         /// <summary>
-        /// A capture should run now: new targets; or, once the last capture has landed, new settings or the interval<br/>
-        /// the frequency sets. Under an interval a group that came out empty is tried again.
+        /// A capture should run now: new targets; or, once the last capture has landed, new settings or the interval the frequency sets.<br/>
+        /// Under an interval a group that came out empty is tried again.
         /// </summary>
         public bool IsDue => stage switch {
             Stage.Capture => true
@@ -84,17 +82,15 @@ namespace RiseOn.Outline2D {
         };
 
         /// <summary>
-        /// Sizes the buffers for the largest frame the budget allows, so selecting never allocates; only a new<br/>
-        /// budget does, and then this returns true because the texture is a new one. Either side is capped at twice<br/>
-        /// the square root of the budget: up to a 4:1 aspect the whole budget is used, beyond it the capture only<br/>
-        /// gets cheaper. A shadow needs a field with room for its blur levels, so turning it on or off allocates too.<br/>
-        /// The GPU targets of <see cref="OutlineQuality.Fast"/> come with the first allocation that asks for it on a device<br/>
-        /// that runs it, at wake if the profile starts with it.
+        /// Sizes the buffers for the largest frame the budget allows, so selecting never allocates; only a new budget does, and then this returns true because the texture is a new one.<br/>
+        /// Either side is capped at twice the square root of the budget: up to a 4:1 aspect the whole budget is used, beyond it the capture only gets cheaper.<br/>
+        /// A shadow needs a field with room for its blur levels, so turning it on or off allocates too.<br/>
+        /// The GPU targets of <see cref="OutlineQuality.Fast"/> come with the first allocation that asks for it on a device that runs it, at wake if the profile starts with it.
         /// </summary>
         public bool Allocate(int pixelBudget, bool shadow) {
-            budget = Mathf.Max(pixelBudget, MIN_BUDGET);
+            budget = Mathf.Max(pixelBudget, MinBudget);
 
-            var size = Mathf.Min(Mathf.CeilToInt(2 * Mathf.Sqrt(budget)), MAX_SIZE);
+            var size = Mathf.Min(Mathf.CeilToInt(2 * Mathf.Sqrt(budget)), MaxSize);
             var reallocated = mask == null || mask.Size != size || field.HasShadow != shadow;
 
             if (reallocated) {
@@ -117,7 +113,9 @@ namespace RiseOn.Outline2D {
         }
 
         /// <summary>Builds the GPU programs of the mask and of these outline materials now, not at the first capture.</summary>
-        public void Warm(params Material[] outlines) => mask.Warm(outlines);
+        public void Warm(params Material[] outlines) {
+            mask.Warm(outlines);
+        }
 
         /// <summary>New targets: whatever is in flight no longer counts, and a capture is due at once if there is any.</summary>
         public void Restart(bool any) {
@@ -133,10 +131,9 @@ namespace RiseOn.Outline2D {
         }
 
         /// <summary>
-        /// Captures the source in the owner's local space, its bounds padded by a local distance, and bakes up to three<br/>
-        /// shadow blur levels: the silhouette grown by a local distance, then blurred to a softness (the distance it fades<br/>
-        /// out over), also local. The buffers must be allocated, for a shadow when there are levels. Immediate, the field<br/>
-        /// is ready for <see cref="TryUpload"/> before this returns.
+        /// Captures the source in the owner's local space, its bounds padded by a local distance, and bakes up to three shadow blur levels: the silhouette grown by a local distance, then blurred to a softness (the distance it fades out over), also local.<br/>
+        /// The buffers must be allocated, for a shadow when there are levels.<br/>
+        /// Immediate, the field is ready for <see cref="TryUpload"/> before this returns.
         /// </summary>
         public void Run(IMaskSource source, Component owner, float padding, float cutoff, Vector3 shadowSoftness, Vector3 shadowGrowth, int shadowLevels) {
             using var _ = captureMarker.Auto();
@@ -185,8 +182,7 @@ namespace RiseOn.Outline2D {
         }
 
         /// <summary>
-        /// Lands the capture in flight once its field is built, or records the next steps of an asynchronous Fast build,<br/>
-        /// at most once a frame; true once per capture, when the new outline can show.
+        /// Lands the capture in flight once its field is built, or records the next steps of an asynchronous Fast build, at most once a frame; true once per capture, when the new outline can show.
         /// </summary>
         public bool TryUpload() {
             if (stage is Stage.Flood) {
@@ -207,8 +203,8 @@ namespace RiseOn.Outline2D {
         }
 
         /// <summary>
-        /// The quad that shows <see cref="Frame"/>, in the owner's local space, and its UVs. The corners sit on<br/>
-        /// texel centres, so bilinear sampling never reaches the texels outside the frame.
+        /// The quad that shows <see cref="Frame"/>, in the owner's local space, and its UVs.<br/>
+        /// The corners sit on texel centers, so bilinear sampling never reaches the texels outside the frame.
         /// </summary>
         public void GetQuad(out Rect position, out Rect uv) {
             var frame = Frame;
@@ -231,7 +227,9 @@ namespace RiseOn.Outline2D {
             mask = null;
         }
 
-        private int StepsPerFrame() => Mathf.CeilToInt(stepCount / (float)FLOOD_FRAMES);
+        private int StepsPerFrame() {
+            return Mathf.CeilToInt(stepCount / (float)FloodFrames);
+        }
 
         // Adds up to count steps of the Fast build in flight to what cmd holds, and runs it all.
         private void RecordSteps(int count) {

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using RiseOn.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -6,22 +6,19 @@ using UnityEngine.UI;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// Outlines the merged silhouette of a group of Graphics. The Graphic that draws it is spawned hidden under this<br/>
-    /// transform when the component wakes, first among its children, so it draws right after this object and takes<br/>
-    /// CanvasGroup alpha, Mask and RectMask2D like any Graphic; colour and maskable are set here and handed to it. The<br/>
-    /// silhouette is captured in this transform's local space at the end of the canvas update after<br/>
-    /// <see cref="SetTargets"/>, once layout has run and every Graphic has rebuilt its mesh, and again as often as the<br/>
-    /// performance profile says; the outline shows once the field is built.
+    /// Outlines the merged silhouette of a group of Graphics.<br/>
+    /// The Graphic that draws it is spawned hidden under this transform when the component wakes, first among its children, so it draws right after this object and takes CanvasGroup alpha, Mask and RectMask2D like any Graphic; color and maskable are set here and handed to it.<br/>
+    /// The silhouette is captured in this transform's local space at the end of the canvas update after <see cref="SetTargets"/>, once layout has run and every Graphic has rebuilt its mesh, and again as often as the performance profile says; the outline shows once the field is built.
     /// </summary>
     [HideMonoScript]
     public class OutlineGraphic : Outline, IOutlineGraphic {
-        internal const string OUTLINE_SHADER = "RiseOn/Outline2D/OutlineGraphic";
+        internal const string OutlineShader = "RiseOn/Outline2D/OutlineGraphic";
 
-        private const string CLIP_RECT = "UNITY_UI_CLIP_RECT";
+        private const string ClipRect = "UNITY_UI_CLIP_RECT";
 
         // The frame's width and height share one float of uv1 as width + height * this; both stay under it, and the sum
         // under 2^24, where a float still holds every integer.
-        internal const float FRAME_PACK = 4096;
+        internal const float FramePack = 4096;
 
         // In units of the root canvas, whatever scale sits between it and this transform. Also the padding each capture
         // reserves, to which the shadow's reach adds while it shows; the shadow is also grown by it.
@@ -37,7 +34,7 @@ namespace RiseOn.Outline2D {
         [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Type")]
         protected OutlineShadowType shadowType;
 
-        // Its alpha is scaled by the outline colour's, so fading the outline fades the shadow too.
+        // Its alpha is scaled by the outline color's, so fading the outline fades the shadow too.
         [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Color")]
         protected Color shadowColor = new(0, 0, 0, .5f);
 
@@ -150,7 +147,7 @@ namespace RiseOn.Outline2D {
         internal Texture FieldTexture => capture.Texture;
         internal Material OutlineMaterial => material;
 
-        private protected override string ShaderName => OUTLINE_SHADER;
+        private protected override string ShaderName => OutlineShader;
         private bool HasShadow => shadowEnabled;
         private bool IsDirectional => shadowType is OutlineShadowType.Directional;
         private bool IsSpread => shadowType is OutlineShadowType.Spread;
@@ -174,7 +171,7 @@ namespace RiseOn.Outline2D {
 
             var clipped = new Material(material) { hideFlags = HideFlags.HideAndDontSave };
 
-            clipped.EnableKeyword(CLIP_RECT);
+            clipped.EnableKeyword(ClipRect);
             capture.Warm(clipped);
             OutlineMask.SafeDestroy(clipped);
         }
@@ -239,7 +236,7 @@ namespace RiseOn.Outline2D {
         }
 
         // One quad over the field. The ring's radius and the field's size ride in uv0.zw, the shadow's offset, softness
-        // and the frame's size in uv1, its colour in uv2 (in the colour space the shader works in), so the material stays the
+        // and the frame's size in uv1, its color in uv2 (in the color space the shader works in), so the material stays the
         // same.
         internal void PopulateMesh(VertexHelper vh) {
             quadBuilt = visible;
@@ -254,16 +251,16 @@ namespace RiseOn.Outline2D {
             // The canvas strips uv1 and uv2 unless its root asks for them, as TextMesh Pro asks for the channels it uses.
             if (HasShadow && graphic.canvas != null) {
                 var root = graphic.canvas.rootCanvas;
-                const AdditionalCanvasShaderChannels CHANNELS = AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2;
+                const AdditionalCanvasShaderChannels Channels = AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2;
 
-                if ((root.additionalShaderChannels & CHANNELS) != CHANNELS) root.additionalShaderChannels |= CHANNELS;
+                if ((root.additionalShaderChannels & Channels) is not Channels) root.additionalShaderChannels |= Channels;
             }
 
             var frame = capture.Frame;
             var vertex = new UIVertex {
                 color = graphic.color
-              , uv1 = new Vector4(shownShadow.x, shownShadow.y, shownShadow.z, frame.Width + frame.Height * FRAME_PACK)
-              , uv2 = (Vector4)(QualitySettings.activeColorSpace == ColorSpace.Linear ? shadowColor.linear : shadowColor)
+              , uv1 = new Vector4(shownShadow.x, shownShadow.y, shownShadow.z, frame.Width + frame.Height * FramePack)
+              , uv2 = (Vector4)(QualitySettings.activeColorSpace is ColorSpace.Linear ? shadowColor.linear : shadowColor)
             };
 
             var size = capture.Texture.width;
@@ -297,7 +294,7 @@ namespace RiseOn.Outline2D {
             graphic.Bind(this);
         }
 
-        // What lives on the spawned Graphic; the colour tints the white ring the shader draws, as a Graphic's colour does.
+        // What lives on the spawned Graphic; the color tints the white ring the shader draws, as a Graphic's color does.
         private protected override void ApplyRendering() {
             if (graphic == null) return;
 

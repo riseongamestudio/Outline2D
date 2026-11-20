@@ -1,5 +1,5 @@
 // Draws an OutlineRenderer's outline through its SpriteRenderer, from the field the sprite carries: the ring from the
-// silhouette's edge out to the width, in the renderer's colour, from the distance in R, over a shadow. A directional
+// silhouette's edge out to the width, in the renderer's color, from the distance in R, over a shadow. A directional
 // shadow is the silhouette and outline moved one way: sharp from the distance in R, soft from the blur levels baked in
 // G, B and A, one per zoom. A spread one fades out all around from the ring's outer edge, from the distance in R alone.
 // Width and the shadow's lengths are interpolated in world units from the orthographic size of the camera drawing it,
@@ -158,7 +158,7 @@ Shader "RiseOn/Outline2D/OutlineRenderer"
 
             half4 frag (Varyings input) : SV_Target
             {
-                // Texels from the nearest silhouette texel centre; the silhouette's own edge is half a texel out.
+                // Texels from the nearest silhouette texel center; the silhouette's own edge is half a texel out.
                 float d = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).r;
 
                 // Anti-aliasing width from the UV, not fwidth(d): helper pixels past the quad's edge sample stale texels

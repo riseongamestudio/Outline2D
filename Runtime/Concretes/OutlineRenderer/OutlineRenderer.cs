@@ -1,19 +1,17 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using RiseOn.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// Outlines the merged silhouette of a group of renderers, sprites or meshes. The SpriteRenderer that draws it is<br/>
-    /// spawned hidden under this transform when the component wakes; colour, sorting and mask interaction are set here<br/>
-    /// and handed to it. The silhouette is captured in this transform's local space in the LateUpdate after<br/>
-    /// <see cref="SetTargets"/>, which runs after constraints have moved it onto the group, and again as often as the<br/>
-    /// performance profile says; the outline shows once the field is built.
+    /// Outlines the merged silhouette of a group of renderers, sprites or meshes.<br/>
+    /// The SpriteRenderer that draws it is spawned hidden under this transform when the component wakes; color, sorting and mask interaction are set here and handed to it.<br/>
+    /// The silhouette is captured in this transform's local space in the LateUpdate after <see cref="SetTargets"/>, which runs after constraints have moved it onto the group, and again as often as the performance profile says; the outline shows once the field is built.
     /// </summary>
     [HideMonoScript]
     public class OutlineRenderer : Outline, IOutlineRenderer {
-        internal const string OUTLINE_SHADER = "RiseOn/Outline2D/OutlineRenderer";
+        internal const string OutlineShader = "RiseOn/Outline2D/OutlineRenderer";
 
         private static readonly int orthoRangeId = Shader.PropertyToID("_OrthoRange");
         private static readonly int widthRangeId = Shader.PropertyToID("_WidthRange");
@@ -47,7 +45,7 @@ namespace RiseOn.Outline2D {
         [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Type")]
         protected OutlineShadowType shadowType;
 
-        // Its alpha is scaled by the outline colour's, so fading the outline fades the shadow too.
+        // Its alpha is scaled by the outline color's, so fading the outline fades the shadow too.
         [SerializeField, SectionGroup("Visual/Shadow"), LabelText("Color")]
         protected Color shadowColor = new(0, 0, 0, .5f);
 
@@ -190,7 +188,7 @@ namespace RiseOn.Outline2D {
             }
         }
 
-        private protected override string ShaderName => OUTLINE_SHADER;
+        private protected override string ShaderName => OutlineShader;
 
         private bool HasShadow => shadowEnabled;
         private bool IsDirectional => shadowType is OutlineShadowType.Directional;
@@ -281,7 +279,7 @@ namespace RiseOn.Outline2D {
                 if (context.RunCapture(context.source, 1 / worldPerLocal)) context.Hide();
             }
 
-            // A sprite over the frame's texels from the first centre to the last: its corners sit on texel centres, so
+            // A sprite over the frame's texels from the first center to the last: its corners sit on texel centers, so
             // bilinear sampling never reaches the texels outside this frame. A rect that starts half a texel in costs a
             // few microseconds, where OverrideGeometry for the same corners took about 190 (measured in the Editor).
             // One pixel per texel, and the pivot on this transform's origin so that the sprite's local space is this
@@ -332,8 +330,8 @@ namespace RiseOn.Outline2D {
             spriteRenderer.enabled = false;
         }
 
-        // The zoom range goes to the material, the rest to the spawned renderer; the colour tints the white ring the
-        // shader draws, as a sprite's colour does.
+        // The zoom range goes to the material, the rest to the spawned renderer; the color tints the white ring the
+        // shader draws, as a sprite's color does.
         private protected override void ApplyRendering() {
             if (spriteRenderer == null) return;
 

@@ -4,13 +4,13 @@
 
 `OutlineRenderer` viền một nhóm `Renderer`, hợp đồng là `IOutlineRenderer`: sprite, hay mesh như
 `MeshRenderer` của skeleton Spine, chung một silhouette. Viền, cùng bóng đổ
-tuỳ chọn ([Lớp nền](../../README.md#bóng-đổ)), được vẽ bằng một `SpriteRenderer` tự sinh trên con
+tùy chọn ([Lớp nền](../../README.md#bóng-đổ)), được vẽ bằng một `SpriteRenderer` tự sinh trên con
 ẩn ([Lớp nền](../../README.md#con-ẩn-vẽ-viền)); màu, bóng, sorting và mask interaction đặt trên
 component. Thư mục này còn chứa shader viền và nguồn vẽ `RendererSource`; phần chụp và distance
 field dùng chung với `OutlineGraphic` ([Field](../../Field/README.md)).
 
 - [Hợp đồng của SetTargets](#hợp-đồng-của-settargets)
-- [Hệ toạ độ và thời điểm chụp](#hệ-toạ-độ-và-thời-điểm-chụp)
+- [Hệ tọa độ và thời điểm chụp](#hệ-tọa-độ-và-thời-điểm-chụp)
 - [Vẽ bằng SpriteRenderer](#vẽ-bằng-spriterenderer)
 - [Setting](#setting)
 - [Chọn Resolution](#chọn-resolution)
@@ -32,7 +32,7 @@ field dùng chung với `OutlineGraphic` ([Field](../../Field/README.md)).
   dùng `FrameInterval` hoặc `TimeInterval` để chụp lại định kỳ. Renderer bị tắt, nằm trên
   GameObject inactive hay có sprite rỗng lúc chụp thì không có trong silhouette lần đó.
 
-## Hệ toạ độ và thời điểm chụp
+## Hệ tọa độ và thời điểm chụp
 
 Silhouette được chụp trong không gian local của `OutlineRenderer`, không phải của camera. Vì vậy
 nhóm di chuyển, camera di chuyển hay zoom đều không cần chụp lại, với điều kiện nhóm cứng so
@@ -48,9 +48,9 @@ không được bảo đảm; khi đó hãy cập nhật vị trí trong `Update
 ## Vẽ bằng SpriteRenderer
 
 - Sprite của viền phủ phần field của khung chụp: một pixel của sprite là một texel, pivot đặt
-  đúng gốc toạ độ của transform, nên không gian local của sprite trùng với của `OutlineRenderer`.
+  đúng gốc tọa độ của transform, nên không gian local của sprite trùng với của `OutlineRenderer`.
   Pivot và pixels per unit chỉ đặt được lúc tạo sprite, nên lần chụp có khung mới (gốc, cỡ texel
-  hay số texel khác đi) tạo sprite mới và huỷ sprite cũ; lần chụp có đúng khung cũ, như nhóm đứng
+  hay số texel khác đi) tạo sprite mới và hủy sprite cũ; lần chụp có đúng khung cũ, như nhóm đứng
   yên được chụp lại định kỳ, dùng lại sprite cũ vì chỉ nội dung texture đổi.
 - Rect của sprite chạy từ tâm texel đầu tới tâm texel cuối của khung, nên bốn góc nằm đúng tâm
   texel và lọc tuyến tính không với ra ngoài khung chụp. `Sprite.Create` giữ nguyên rect lẻ nửa

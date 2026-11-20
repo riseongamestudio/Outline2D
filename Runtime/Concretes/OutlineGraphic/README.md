@@ -5,13 +5,13 @@
 `OutlineGraphic` viền một nhóm `Graphic` của uGUI (`Image`, `RawImage`...), hợp đồng là
 `IOutlineGraphic`. Viền được vẽ bằng một Graphic tự sinh trên con ẩn ([Lớp
 nền](../../README.md#con-ẩn-vẽ-viền)): `OutlineCanvasGraphic`, một `MaskableGraphic` nội bộ, vẽ qua
-`CanvasRenderer` như mọi Graphic của uGUI; bóng đổ tuỳ chọn ([Lớp nền](../../README.md#bóng-đổ)) vẽ
+`CanvasRenderer` như mọi Graphic của uGUI; bóng đổ tùy chọn ([Lớp nền](../../README.md#bóng-đổ)) vẽ
 chung với viền. Màu, bóng và *Maskable* đặt trên component. Thư mục này còn chứa shader viền UI và
 nguồn vẽ `GraphicSource`; phần chụp và distance field dùng chung với `OutlineRenderer`
 ([Field](../../Field/README.md)).
 
 - [Hợp đồng của SetTargets](#hợp-đồng-của-settargets)
-- [Hệ toạ độ và thời điểm chụp](#hệ-toạ-độ-và-thời-điểm-chụp)
+- [Hệ tọa độ và thời điểm chụp](#hệ-tọa-độ-và-thời-điểm-chụp)
 - [Graphic tự sinh](#graphic-tự-sinh)
 - [Setting](#setting)
 - [Trong Canvas](#trong-canvas)
@@ -31,7 +31,7 @@ nguồn vẽ `GraphicSource`; phần chụp và distance field dùng chung với
   sprite, đổi kích thước) thì phải gọi lại `SetTargets`. Nhóm tự đổi hình dạng thì dùng
   `FrameInterval` hoặc `TimeInterval` để chụp lại định kỳ.
 
-## Hệ toạ độ và thời điểm chụp
+## Hệ tọa độ và thời điểm chụp
 
 Silhouette được chụp trong không gian local của `OutlineGraphic`, nên nhóm phải cứng so với nó từ
 lúc chụp tới lần gọi sau. Cách bám thường gặp là làm `OutlineGraphic` thành con của nhóm, hoặc
@@ -146,7 +146,7 @@ Màu và material của các Graphic trong nhóm không ảnh hưởng silhouett
 (`CanvasRenderer.GetMesh()`), với texture chính của Graphic (`mainTexture`) đặt vào `_MainTex` qua
 MaterialPropertyBlock. Vẽ thẳng mesh đó thì mask trống (đo trong Editor trên D3D12: 0 texel,
 còn bản chép của cùng mesh ra 12652 texel), nên mỗi Graphic được chép sang một mesh riêng bằng
-`Mesh.CombineMeshes` rồi mới vẽ. Các mesh chép được giữ lại cho lần chụp sau và huỷ cùng
+`Mesh.CombineMeshes` rồi mới vẽ. Các mesh chép được giữ lại cho lần chụp sau và hủy cùng
 component. Graphic tắt hoặc chưa có mesh thì bị bỏ qua.
 
 ## Shader

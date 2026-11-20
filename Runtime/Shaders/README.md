@@ -25,7 +25,7 @@ trên field.
 
 Vì thế cài package xong, `UniversalRenderPipelineGlobalSettings.asset` của project có thêm mục
 `Outline2DResources`, cạnh các mục URP tự thêm cho chính nó: commit cùng project. Diff của
-file này hay kèm theo việc `m_RuntimeSettings` bị làm trống; URP xoá danh sách đó mỗi lần Editor
+file này hay kèm theo việc `m_RuntimeSettings` bị làm trống; URP xóa danh sách đó mỗi lần Editor
 lưu file và chỉ điền lại lúc build, nên không sao.
 
 Không được gán hai shader này cho renderer nào trong scene: chúng không có tag pipeline và không

@@ -1,8 +1,8 @@
 // Draws an OutlineGraphic's ring from the distance in the field's R as a UI Graphic, over a shadow: a directional one is
 // the silhouette and outline moved one way, sharp from the distance in R, soft from the blur baked in G; a spread one
-// fades out all around from the ring's outer edge, from R alone. Stencil, RectMask2D clipping, the canvas's vertex colour
+// fades out all around from the ring's outer edge, from R alone. Stencil, RectMask2D clipping, the canvas's vertex color
 // handling and premultiplied blending follow Unity's UI/Default. The ring's radius and the field's size ride in uv0.zw,
-// the shadow's offset and softness (or its reach) and the frame's size in uv1 (in field texels) and its colour in uv2, so
+// the shadow's offset and softness (or its reach) and the frame's size in uv1 (in field texels) and its color in uv2, so
 // the material changes only when the shadow is turned on, off or to the other kind: each is compiled in only under its
 // keyword, _SHADOW or _SHADOW_SPREAD.
 Shader "RiseOn/Outline2D/OutlineGraphic"
@@ -127,7 +127,7 @@ Shader "RiseOn/Outline2D/OutlineGraphic"
 
             fixed4 frag (v2f IN) : SV_Target
             {
-                // Texels from the nearest silhouette texel centre; the silhouette's own edge is half a texel out.
+                // Texels from the nearest silhouette texel center; the silhouette's own edge is half a texel out.
                 float d = tex2D(_MainTex, IN.texcoord.xy).r;
 
                 // The ring: anti-aliasing width from the UV, inner ramp capped at one texel, its inner edge on the
@@ -152,7 +152,7 @@ Shader "RiseOn/Outline2D/OutlineGraphic"
                 float alpha = ringA + shadowA;
                 half4 color = half4(alpha > 0 ? (IN.color.rgb * ringA + IN.shadowColor.rgb * shadowA) / alpha : 0, alpha);
                 #elif !defined(_SHADOW)
-                // A white ring, like an Image's texture, tinted by Graphic.color through the vertex colour as every
+                // A white ring, like an Image's texture, tinted by Graphic.color through the vertex color as every
                 // Graphic is.
                 half4 ring = half4(1, 1, 1, outer * inner);
                 half4 color = ring * IN.color;
@@ -169,7 +169,7 @@ Shader "RiseOn/Outline2D/OutlineGraphic"
                 float sharp = saturate((IN.texcoord.z + 0.5 - shifted.r) / max(aa, IN.shadow.z) + 0.5);
                 float shadow = lerp(saturate(shifted.g), sharp, 1 - saturate((IN.shadow.z - 1) / 2)) * framed;
 
-                // The ring, white like an Image's texture and tinted by Graphic.color through the vertex colour as every
+                // The ring, white like an Image's texture and tinted by Graphic.color through the vertex color as every
                 // Graphic is, over the shadow; neither covers the silhouette, and fading the Graphic fades both.
                 float ringA = outer * inner * IN.color.a;
                 float shadowA = shadow * inner * IN.shadowColor.a * IN.color.a * (1 - ringA);

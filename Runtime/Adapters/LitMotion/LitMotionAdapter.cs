@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using LitMotion;
 using UnityEngine;
 
 namespace RiseOn.Outline2D.LitMotion {
     /// <summary>
-    /// LitMotion bindings for <see cref="IOutline.Color"/>, the same set LitMotion has for a SpriteRenderer's colour.
+    /// LitMotion bindings for <see cref="IOutline.Color"/>, the same set LitMotion has for a SpriteRenderer's color.
     /// </summary>
     public static class LitMotionAdapter {
-        /// <summary>Create a motion and bind it to the outline's colour.</summary>
+        /// <summary>Create a motion and bind it to the outline's color.</summary>
         public static MotionHandle BindToColor<TOptions, TAdapter>(this MotionBuilder<Color, TOptions, TAdapter> builder, IOutline outline)
             where TOptions : unmanaged, IMotionOptions
             where TAdapter : unmanaged, IMotionAdapter<Color, TOptions> {
@@ -16,7 +16,7 @@ namespace RiseOn.Outline2D.LitMotion {
             return builder.Bind(outline, static (x, o) => o.Color = x);
         }
 
-        /// <summary>Create a motion and bind it to the red channel of the outline's colour.</summary>
+        /// <summary>Create a motion and bind it to the red channel of the outline's color.</summary>
         public static MotionHandle BindToColorR<TOptions, TAdapter>(this MotionBuilder<float, TOptions, TAdapter> builder, IOutline outline)
             where TOptions : unmanaged, IMotionOptions
             where TAdapter : unmanaged, IMotionAdapter<float, TOptions> {
@@ -29,7 +29,7 @@ namespace RiseOn.Outline2D.LitMotion {
             });
         }
 
-        /// <summary>Create a motion and bind it to the green channel of the outline's colour.</summary>
+        /// <summary>Create a motion and bind it to the green channel of the outline's color.</summary>
         public static MotionHandle BindToColorG<TOptions, TAdapter>(this MotionBuilder<float, TOptions, TAdapter> builder, IOutline outline)
             where TOptions : unmanaged, IMotionOptions
             where TAdapter : unmanaged, IMotionAdapter<float, TOptions> {
@@ -42,7 +42,7 @@ namespace RiseOn.Outline2D.LitMotion {
             });
         }
 
-        /// <summary>Create a motion and bind it to the blue channel of the outline's colour.</summary>
+        /// <summary>Create a motion and bind it to the blue channel of the outline's color.</summary>
         public static MotionHandle BindToColorB<TOptions, TAdapter>(this MotionBuilder<float, TOptions, TAdapter> builder, IOutline outline)
             where TOptions : unmanaged, IMotionOptions
             where TAdapter : unmanaged, IMotionAdapter<float, TOptions> {
@@ -55,7 +55,7 @@ namespace RiseOn.Outline2D.LitMotion {
             });
         }
 
-        /// <summary>Create a motion and bind it to the alpha of the outline's colour, which is its opacity.</summary>
+        /// <summary>Create a motion and bind it to the alpha of the outline's color, which is its opacity.</summary>
         public static MotionHandle BindToColorA<TOptions, TAdapter>(this MotionBuilder<float, TOptions, TAdapter> builder, IOutline outline)
             where TOptions : unmanaged, IMotionOptions
             where TAdapter : unmanaged, IMotionAdapter<float, TOptions> {

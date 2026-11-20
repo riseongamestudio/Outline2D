@@ -1,18 +1,16 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 namespace RiseOn.Outline2D {
     /// <summary>
-    /// The GPU half of <see cref="OutlineQuality.Fast"/>: turns the mask into the field by jump flooding and copies it<br/>
-    /// into the field texture, all on the GPU, so nothing is read back. A build is the seed from the mask, then steps:<br/>
-    /// the jumps from the largest step down, one more of a single texel, and the resolve with the copy, which a caller<br/>
-    /// records all at once or a few at a time over frames.
+    /// The GPU half of <see cref="OutlineQuality.Fast"/>: turns the mask into the field by jump flooding and copies it into the field texture, all on the GPU, so nothing is read back.<br/>
+    /// A build is the seed from the mask, then steps: the jumps from the largest step down, one more of a single texel, and the resolve with the copy, which a caller records all at once or a few at a time over frames.
     /// </summary>
     internal sealed class OutlineJumpFlood {
-        private const int SEED_PASS = 0;
-        private const int JUMP_PASS = 1;
-        private const int RESOLVE_PASS = 2;
+        private const int SeedPass = 0;
+        private const int JumpPass = 1;
+        private const int ResolvePass = 2;
 
         private static readonly int sourceId = Shader.PropertyToID("_JumpSource");
         private static readonly int frameId = Shader.PropertyToID("_JumpFrame");
@@ -34,7 +32,7 @@ namespace RiseOn.Outline2D {
         /// <summary>Whether this device renders the formats a build needs and copies render targets into textures.</summary>
         public static bool IsSupported(GraphicsFormat fieldFormat) {
             return Shader != null && Shader.isSupported
-                && SeedFormat() != GraphicsFormat.None
+                && SeedFormat() is not GraphicsFormat.None
                 && SystemInfo.IsFormatSupported(fieldFormat, GraphicsFormatUsage.Render)
                 && (SystemInfo.copyTextureSupport & CopyTextureSupport.RTToTexture) != 0;
         }
@@ -81,12 +79,11 @@ namespace RiseOn.Outline2D {
 
         /// <summary>Records the seed from the mask, which must hold this frame's silhouette by then.</summary>
         public void Seed(CommandBuffer cmd, OutlineMask mask, in OutlineFrame frame) {
-            Draw(cmd, mask.Texture, seeds, SEED_PASS, frame);
+            Draw(cmd, mask.Texture, seeds, SeedPass, frame);
         }
 
         /// <summary>
-        /// Records one step after the seed, in order; the last resolves the levels, grown and blurred in field texels, and<br/>
-        /// copies the result into field, which from then on holds the new field.
+        /// Records one step after the seed, in order; the last resolves the levels, grown and blurred in field texels, and copies the result into field, which from then on holds the new field.
         /// </summary>
         public void Step(CommandBuffer cmd, int step, in OutlineFrame frame, Vector3 sigmas, Vector3 growths, int levels, Texture2D field) {
             var jumps = JumpCount(frame);
@@ -95,8 +92,8 @@ namespace RiseOn.Outline2D {
                 // Halving steps from the largest power of two under the frame, then one more of a texel.
                 properties.SetFloat(stepId, step < jumps - 1 ? 1 << (jumps - 2 - step) : 1);
 
-                if (step % 2 == 0) Draw(cmd, seeds, jumped, JUMP_PASS, frame);
-                else Draw(cmd, jumped, seeds, JUMP_PASS, frame);
+                if (step % 2 == 0) Draw(cmd, seeds, jumped, JumpPass, frame);
+                else Draw(cmd, jumped, seeds, JumpPass, frame);
 
                 return;
             }
@@ -105,7 +102,7 @@ namespace RiseOn.Outline2D {
             properties.SetVector(sigmasId, sigmas);
             properties.SetFloat(levelsId, levels);
 
-            Draw(cmd, jumps % 2 == 1 ? jumped : seeds, output, RESOLVE_PASS, frame);
+            Draw(cmd, jumps % 2 == 1 ? jumped : seeds, output, ResolvePass, frame);
 
             // The whole texture: no sub-rect, so nothing depends on which way the API stores rows.
             cmd.CopyTexture(output, field);
