@@ -1,0 +1,12 @@
+name: Release
+
+# A pushed tag publishes its package version as a release of this repo, which the RiseOn UPM registry indexes.
+on:
+  push:
+    tags: ["*"]
+
+jobs:
+  release:
+    uses: riseongamestudio/upm/.github/workflows/pack-release.yml@main
+    permissions:
+      contents: write
