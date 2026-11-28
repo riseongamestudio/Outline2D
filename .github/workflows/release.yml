@@ -3,7 +3,7 @@ name: Release
 # A pushed tag publishes its package version as a release of this repo, which the RiseOn UPM registry indexes.
 on:
   push:
-    tags: ["*"]
+    tags: ["**"]
 
 jobs:
   release:
