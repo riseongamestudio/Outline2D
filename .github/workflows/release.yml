@@ -8,5 +8,7 @@ on:
 jobs:
   release:
     uses: riseongamestudio/upm/.github/workflows/pack-release.yml@main
+    # The organization's UPM_INDEX_TOKEN, which lets it index the release at once.
+    secrets: inherit
     permissions:
       contents: write
